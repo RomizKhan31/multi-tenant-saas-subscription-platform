@@ -9,13 +9,25 @@ const registerSchema = z.object({
   name: z.string().min(1),
 });
 
-const registerOnboardSchema = z.object({
-  organizationName: z.string().min(2, 'Organization name must be at least 2 characters'),
-  name: z.string().min(2, 'Admin name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  planId: z.string().min(1, 'Please select a subscription plan'),
-});
+const registerOnboardSchema = z.preprocess(
+  (data: any) => {
+    if (data && typeof data === 'object') {
+      const resolvedName = data.name || data.adminName;
+      return {
+        ...data,
+        name: resolvedName,
+      };
+    }
+    return data;
+  },
+  z.object({
+    organizationName: z.string().min(2, 'Organization name must be at least 2 characters'),
+    name: z.string({ required_error: 'Admin name must be at least 2 characters' }).min(2, 'Admin name must be at least 2 characters'),
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    planId: z.string().min(1, 'Please select a subscription plan'),
+  })
+);
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -51,7 +63,7 @@ export class AuthController {
       res.status(201).json(result);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: 'Validation error', details: error.errors });
+        res.status(400).json({ error: error.errors[0]?.message || 'Validation error', details: error.errors });
       } else {
         res.status(400).json({ error: error.message });
       }
@@ -65,7 +77,7 @@ export class AuthController {
       res.status(200).json(result);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: 'Validation error', details: error.errors });
+        res.status(400).json({ error: error.errors[0]?.message || 'Validation error', details: error.errors });
       } else if (error.message.includes('already exists')) {
         res.status(409).json({ error: error.message });
       } else {

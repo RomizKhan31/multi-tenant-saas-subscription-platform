@@ -39,14 +39,20 @@ function AcceptInvitationContent() {
     setLoading(true);
 
     try {
-      await api.post('/auth/accept-invitation', {
+      await api.post('/members/accept', {
         token,
         name,
         password,
       });
       setSuccess(true);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to accept invitation. The link may be expired or already used.');
+      const errorData = err.response?.data;
+      let message = errorData?.error || 'Failed to accept invitation. The link may be expired or already used.';
+      if (errorData?.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
+        const detailMsg = errorData.details.map((d: any) => d.message).filter(Boolean).join('. ');
+        if (detailMsg) message = detailMsg;
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }

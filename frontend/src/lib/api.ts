@@ -28,7 +28,8 @@ api.interceptors.response.use(
       error.config?.url?.includes('/auth/onboard-status') ||
       error.config?.url?.includes('/auth/forgot-password') ||
       error.config?.url?.includes('/auth/reset-password') ||
-      error.config?.url?.includes('/auth/accept-invitation');
+      error.config?.url?.includes('/auth/accept-invitation') ||
+      error.config?.url?.includes('/members/accept');
 
     if (error.response?.status === 401 && !isPublicAuthRoute && typeof window !== 'undefined') {
       const hadToken = localStorage.getItem('token');

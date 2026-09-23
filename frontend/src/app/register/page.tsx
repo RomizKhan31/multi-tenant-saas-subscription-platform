@@ -69,6 +69,7 @@ export default function RegisterPage() {
       const response = await api.post('/auth/register-onboard', {
         organizationName,
         adminName,
+        name: adminName,
         email,
         password,
         planId: effectivePlanId,
@@ -81,7 +82,18 @@ export default function RegisterPage() {
         setLoading(false);
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Registration failed');
+      const errorData = err.response?.data;
+      let message = errorData?.error || err.message || 'Registration failed';
+      if (errorData?.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
+        const detailMsg = errorData.details
+          .map((d: any) => d.message)
+          .filter(Boolean)
+          .join('. ');
+        if (detailMsg) {
+          message = detailMsg;
+        }
+      }
+      setError(message);
       setLoading(false);
     }
   };

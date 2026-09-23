@@ -29,17 +29,18 @@ function PaymentSuccessContent() {
       try {
         const response = await api.get(`/auth/onboard-status?sessionId=${sessionId}`);
         const data = response.data;
+        const normalizedStatus = (data.status || '').toUpperCase();
 
-        if (data.status === 'active') {
+        if (normalizedStatus === 'ACTIVE' || normalizedStatus === 'COMPLETED') {
           setStatus('active');
           setDetails({
             organizationName: data.organizationName,
             email: data.email,
           });
           clearInterval(intervalId);
-        } else if (data.status === 'failed') {
+        } else if (normalizedStatus === 'FAILED' || normalizedStatus === 'EXPIRED') {
           setStatus('failed');
-          setErrorMessage(data.message || 'Payment processing failed.');
+          setErrorMessage(data.message || 'Payment processing failed or registration expired.');
           clearInterval(intervalId);
         } else {
           // Still pending

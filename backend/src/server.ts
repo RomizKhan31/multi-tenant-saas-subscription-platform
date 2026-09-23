@@ -111,6 +111,7 @@ const webhookController = new controllers.WebhookController(webhookService);
 
 // Initialize routes
 app.use('/api/auth', routes.createAuthRoutes(authController));
+app.post('/api/auth/accept-invitation', memberController.acceptInvitation);
 app.use('/api/organizations', routes.createOrganizationRoutes(organizationController));
 app.use('/api/plans', routes.createPlanRoutes(planController));
 app.use('/api/subscriptions', routes.createSubscriptionRoutes(subscriptionController));

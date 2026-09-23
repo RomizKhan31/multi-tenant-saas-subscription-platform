@@ -116,6 +116,37 @@ describe('Payment & Invoice Tests', () => {
       expect(statusRes.body.organizationName).toBe('Gamma Systems');
     });
 
+    it('should succeed when adminName is provided instead of name (frontend payload compatibility)', async () => {
+      const response = await request(app)
+        .post('/api/auth/register-onboard')
+        .send({
+          organizationName: 'Delta Systems',
+          adminName: 'Diana Admin',
+          email: 'diana@delta.com',
+          password: 'Password123!',
+          planId: testPlan._id.toString(),
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('sessionId');
+      expect(response.body).toHaveProperty('checkoutUrl');
+    });
+
+    it('should return 400 with descriptive error when admin name is missing', async () => {
+      const response = await request(app)
+        .post('/api/auth/register-onboard')
+        .send({
+          organizationName: 'Delta Systems',
+          email: 'diana@delta.com',
+          password: 'Password123!',
+          planId: testPlan._id.toString(),
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('details');
+      expect(response.body.error).toContain('Admin name');
+    });
+
     it('should reject registration if email is already taken', async () => {
       const response = await request(app)
         .post('/api/auth/register-onboard')
