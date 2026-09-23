@@ -129,7 +129,69 @@ describe('Multi-Tenancy Tests', () => {
       expect(response.status).toBe(200);
       // Invitation should be for Organization A, not Organization B
     });
+
+    it('should prevent Organization A from deleting a member in Organization B', async () => {
+      const orgBMember = new User({
+        email: 'orgb-member@example.com',
+        password: 'Password123!',
+        name: 'Org B Member',
+        role: 'ORGANIZATION_MEMBER',
+        organizationId: orgBId,
+      });
+      await orgBMember.save();
+
+      const response = await request(app)
+        .delete(`/api/members/${orgBMember._id}`)
+        .set('Authorization', `Bearer ${orgAToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.error).toContain('not a member of this organization');
+
+      const memberStillExists = await User.findById(orgBMember._id);
+      expect(memberStillExists?.organizationId?.toString()).toBe(orgBId);
+    });
+
+    it('should prevent Organization A from modifying roles of members in Organization B', async () => {
+      const orgBMember = new User({
+        email: 'orgb-member-2@example.com',
+        password: 'Password123!',
+        name: 'Org B Member 2',
+        role: 'ORGANIZATION_MEMBER',
+        organizationId: orgBId,
+      });
+      await orgBMember.save();
+
+      const response = await request(app)
+        .put(`/api/members/${orgBMember._id}/role`)
+        .set('Authorization', `Bearer ${orgAToken}`)
+        .send({ role: 'ORGANIZATION_ADMIN' });
+
+      expect(response.status).toBe(403);
+      expect(response.body.error).toContain('not a member of this organization');
+
+      const memberAfter = await User.findById(orgBMember._id);
+      expect(memberAfter?.role).toBe('ORGANIZATION_MEMBER');
+    });
+
+    it('should allow Organization A to remove its own member', async () => {
+      const orgAMember = new User({
+        email: 'orga-member@example.com',
+        password: 'Password123!',
+        name: 'Org A Member',
+        role: 'ORGANIZATION_MEMBER',
+        organizationId: orgAId,
+      });
+      await orgAMember.save();
+
+      const response = await request(app)
+        .delete(`/api/members/${orgAMember._id}`)
+        .set('Authorization', `Bearer ${orgAToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toContain('removed successfully');
+    });
   });
+
 
   describe('Tenant Data Isolation', () => {
     it('should only return payments for the authenticated user organization', async () => {

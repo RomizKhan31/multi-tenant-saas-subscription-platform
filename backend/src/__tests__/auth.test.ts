@@ -179,5 +179,30 @@ describe('Authentication Tests', () => {
 
       expect(response.status).toBe(401);
     });
+
+    it('should fail to access protected route with expired token', async () => {
+      const jwt = require('jsonwebtoken');
+      const expiredToken = jwt.sign(
+        {
+          userId: new mongoose.Types.ObjectId().toString(),
+          email: 'test@example.com',
+          role: 'ORGANIZATION_MEMBER',
+        },
+        process.env.JWT_SECRET || 'test-jwt-secret-that-is-at-least-32-characters-long',
+        { expiresIn: '-1s' }
+      );
+
+      const response = await request(app)
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${expiredToken}`)
+        .send({
+          currentPassword: 'TestPassword123!',
+          newPassword: 'NewPassword123!',
+        });
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toContain('Token expired');
+    });
   });
 });
+
