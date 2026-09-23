@@ -28,7 +28,7 @@ export class MemberService {
     expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
 
     // Create invitation
-    await this.invitationRepository.create({
+    const invitation = await this.invitationRepository.create({
       organizationId,
       email,
       role,
@@ -36,9 +36,12 @@ export class MemberService {
       expiresAt,
     });
 
-    // Send invitation email
-    // Note: We need organization name here, would need to fetch it
-    await sendInvitationEmail(email, 'Organization', token);
+    // Do not report a successful invitation when the recipient was not emailed.
+    const sent = await sendInvitationEmail(email, 'Organization', token);
+    if (!sent) {
+      await this.invitationRepository.delete(invitation._id);
+      throw new Error('Invitation email could not be delivered. Verify the Resend sender domain and recipient settings, then try again.');
+    }
   }
 
   async acceptInvitation(token: string, userData: {

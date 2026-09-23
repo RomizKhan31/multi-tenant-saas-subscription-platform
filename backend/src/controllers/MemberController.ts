@@ -9,7 +9,10 @@ const inviteMemberSchema = z.object({
 });
 
 const changeMemberRoleSchema = z.object({
-  role: z.nativeEnum(UserRole),
+  role: z.nativeEnum(UserRole).refine(
+    (value) => value === UserRole.ORGANIZATION_ADMIN || value === UserRole.ORGANIZATION_MEMBER,
+    { message: 'Organization members can only be assigned an organization role' }
+  ),
 });
 
 const acceptInvitationSchema = z.object({
