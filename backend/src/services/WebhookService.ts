@@ -133,9 +133,7 @@ export class WebhookService {
       }
 
       // Update payment
-      const payment = await this.paymentRepository.findByStripePaymentIntentId(
-        checkoutSession.payment_intent
-      );
+      const payment = await this.paymentRepository.findByStripeCheckoutSessionId(checkoutSession.id);
 
       if (payment) {
         await this.paymentRepository.update(payment._id, {

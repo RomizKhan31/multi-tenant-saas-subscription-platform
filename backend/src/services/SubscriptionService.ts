@@ -1,6 +1,6 @@
 import { SubscriptionRepository } from '../repositories';
 import { PlanRepository } from '../repositories';
-import { ISubscription, SubscriptionStatus } from '../types';
+import { IPlan, ISubscription, SubscriptionStatus } from '../types';
 import { Types } from 'mongoose';
 
 export class SubscriptionService {
@@ -30,6 +30,20 @@ export class SubscriptionService {
 
   async getSubscriptionByOrganizationId(organizationId: Types.ObjectId): Promise<ISubscription | null> {
     return this.subscriptionRepository.findByOrganizationId(organizationId);
+  }
+
+  async getCurrentPlanByOrganizationId(organizationId: Types.ObjectId): Promise<Pick<IPlan, '_id' | 'name' | 'billingInterval'> | null> {
+    const subscription = await this.subscriptionRepository.findByOrganizationId(organizationId);
+    if (!subscription) {
+      return null;
+    }
+
+    const plan = await this.planRepository.findById(subscription.planId);
+    if (!plan) {
+      return null;
+    }
+
+    return { _id: plan._id, name: plan.name, billingInterval: plan.billingInterval };
   }
 
   async updateSubscription(

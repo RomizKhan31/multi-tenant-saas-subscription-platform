@@ -1,13 +1,15 @@
 import { PaymentRepository } from '../repositories';
 import { SubscriptionRepository } from '../repositories';
-import { IPayment, PaymentStatus } from '../types';
+import { PlanRepository } from '../repositories';
+import { IPayment, PaymentStatus, SubscriptionStatus } from '../types';
 import { Types } from 'mongoose';
 import { stripe } from '../config/stripe';
 
 export class PaymentService {
   constructor(
     private paymentRepository: PaymentRepository,
-    private subscriptionRepository: SubscriptionRepository
+    private subscriptionRepository: SubscriptionRepository,
+    private planRepository: PlanRepository
   ) {}
 
   async createCheckoutSession(
@@ -15,12 +17,26 @@ export class PaymentService {
     planId: Types.ObjectId,
     customerEmail: string
   ): Promise<{ sessionId: string; url: string }> {
-    // Verify subscription exists or create pending one
+    const plan = await this.planRepository.findById(planId);
+    if (!plan || !plan.isActive) {
+      throw new Error('The selected plan is no longer available');
+    }
+
+    // A first checkout legitimately has no subscription yet. Create its pending
+    // record before redirecting to Stripe; the webhook is still authoritative for activation.
     let subscription = await this.subscriptionRepository.findByOrganizationId(organizationId);
-    
     if (!subscription) {
-      // This would be handled in the registration flow
-      throw new Error('Subscription not found. Please complete registration first.');
+      subscription = await this.subscriptionRepository.create({
+        organizationId,
+        planId,
+        status: SubscriptionStatus.PENDING,
+      });
+    } else if (subscription.status === SubscriptionStatus.CANCELLED || subscription.status === SubscriptionStatus.FAILED || subscription.status === SubscriptionStatus.PENDING) {
+      subscription = await this.subscriptionRepository.update(subscription._id, {
+        planId,
+        status: SubscriptionStatus.PENDING,
+        cancelAtPeriodEnd: false,
+      }) ?? subscription;
     }
 
     // Create Stripe checkout session
@@ -31,9 +47,9 @@ export class PaymentService {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'Subscription Plan',
+              name: plan.name,
             },
-            unit_amount: 2900, // This should come from the plan
+            unit_amount: Math.round(plan.price * 100),
           },
           quantity: 1,
         },
@@ -52,7 +68,7 @@ export class PaymentService {
     await this.paymentRepository.create({
       organizationId,
       subscriptionId: subscription._id,
-      amount: 29.00,
+      amount: plan.price,
       currency: 'usd',
       status: PaymentStatus.PENDING,
       stripeCheckoutSessionId: session.id,

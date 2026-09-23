@@ -14,8 +14,9 @@ export class PaymentController {
     try {
       const validatedData = createCheckoutSchema.parse(req.body);
       const organizationId = req.user?.organizationId;
+      const userEmail = req.user?.email;
       
-      if (!organizationId) {
+      if (!organizationId || !userEmail) {
         res.status(403).json({ error: 'No organization associated with user' });
         return;
       }
@@ -23,7 +24,7 @@ export class PaymentController {
       const result = await this.paymentService.createCheckoutSession(
         organizationId,
         validatedData.planId as any,
-        req.user.email
+        userEmail
       );
       
       res.status(200).json(result);
@@ -31,7 +32,11 @@ export class PaymentController {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: 'Validation error', details: error.errors });
       } else {
-        res.status(500).json({ error: error.message });
+        console.error('Unable to create Stripe checkout session:', error);
+        const message = error.message === 'The selected plan is no longer available'
+          ? error.message
+          : 'Checkout is temporarily unavailable. Please try again shortly.';
+        res.status(500).json({ error: message });
       }
     }
   };

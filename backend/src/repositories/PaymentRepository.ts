@@ -19,6 +19,10 @@ export class PaymentRepository {
     return Payment.findOne({ stripePaymentIntentId }).lean();
   }
 
+  async findByStripeCheckoutSessionId(stripeCheckoutSessionId: string): Promise<IPayment | null> {
+    return Payment.findOne({ stripeCheckoutSessionId }).lean();
+  }
+
   async create(paymentData: Partial<IPayment>): Promise<IPayment> {
     const payment = new Payment(paymentData);
     return payment.save();

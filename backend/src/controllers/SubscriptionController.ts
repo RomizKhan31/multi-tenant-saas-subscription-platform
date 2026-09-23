@@ -32,6 +32,26 @@ export class SubscriptionController {
     }
   };
 
+  getCurrentPlan = async (req: IAuthRequest, res: Response): Promise<void> => {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        res.status(403).json({ error: 'No organization associated with user' });
+        return;
+      }
+
+      const plan = await this.subscriptionService.getCurrentPlanByOrganizationId(organizationId);
+      if (!plan) {
+        res.status(404).json({ error: 'Current plan not found' });
+        return;
+      }
+
+      res.status(200).json(plan);
+    } catch {
+      res.status(500).json({ error: 'Unable to load current plan' });
+    }
+  };
+
   upgradeSubscription = async (req: IAuthRequest, res: Response): Promise<void> => {
     try {
       const { planId } = req.body;

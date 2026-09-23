@@ -56,7 +56,7 @@ const authService = new services.AuthService(userRepository, passwordResetTokenR
 const organizationService = new services.OrganizationService(organizationRepository, userRepository);
 const planService = new services.PlanService(planRepository);
 const subscriptionService = new services.SubscriptionService(subscriptionRepository, planRepository);
-const paymentService = new services.PaymentService(paymentRepository, subscriptionRepository);
+const paymentService = new services.PaymentService(paymentRepository, subscriptionRepository, planRepository);
 const transactionService = new services.TransactionService(transactionRepository, paymentRepository);
 const memberService = new services.MemberService(userRepository, invitationRepository);
 const webhookService = new services.WebhookService(
@@ -111,6 +111,10 @@ const startServer = async (): Promise<void> => {
   }
 };
 
-startServer();
+// Start the HTTP listener only when this file is the process entrypoint. This keeps
+// imports side-effect free for tests and other tooling that need the Express app.
+if (require.main === module) {
+  startServer();
+}
 
 export default app;
