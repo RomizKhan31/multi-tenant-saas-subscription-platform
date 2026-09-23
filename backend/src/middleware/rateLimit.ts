@@ -1,6 +1,11 @@
 import rateLimit from 'express-rate-limit';
+import { RequestHandler } from 'express';
 
-export const createRateLimiter = (windowMs: number, max: number, message: string) => {
+export const createRateLimiter = (windowMs: number, max: number, message: string): RequestHandler => {
+  if (process.env.NODE_ENV === 'test') {
+    return (_req, _res, next) => next();
+  }
+
   return rateLimit({
     windowMs,
     max,

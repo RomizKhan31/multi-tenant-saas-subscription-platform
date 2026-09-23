@@ -7,6 +7,11 @@ export interface EmailData {
 }
 
 export const sendEmail = async (data: EmailData): Promise<boolean> => {
+  // Tests must not call external providers or depend on Resend's sandbox recipients.
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+
   if (!resend) {
     console.warn('Email service not configured. Skipping email send.');
     return false;
