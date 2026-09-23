@@ -1,68 +1,30 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Building2, KeyRound, UserRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/api';
+import { DashboardShell, QueryState, StatusBadge } from '@/components/dashboard-ui';
+
+type Organization = { name: string; status: string; createdAt: string };
+type Plan = { name: string; billingInterval: string };
 
 export default function OrganizationMemberDashboard() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!user || user.role !== 'ORGANIZATION_MEMBER') {
-      router.push('/login');
-    }
-  }, [user, router]);
-
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
-
-  if (!user) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-xl font-bold">Organization Member Dashboard</h1>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-4">{user.email}</span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold mb-4">My Profile</h2>
-              <div className="bg-white p-4 rounded shadow">
-                <h3 className="text-lg font-semibold">Account Information</h3>
-                <p className="text-gray-600">View and edit your account details</p>
-              </div>
-              <div className="mt-4 bg-white p-4 rounded shadow">
-                <h3 className="text-lg font-semibold">Organization Information</h3>
-                <p className="text-gray-600">View organization details (read-only)</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const { user, logout, loading } = useAuth(); const router = useRouter();
+  const [profile, setProfile] = useState({ name: '', email: '' }); const [password, setPassword] = useState({ currentPassword: '', newPassword: '' }); const [notice, setNotice] = useState('');
+  useEffect(() => { if (!loading && (!user || user.role !== 'ORGANIZATION_MEMBER')) router.replace('/login'); }, [loading, user, router]);
+  useEffect(() => { if (user) setProfile({ name: user.name || '', email: user.email }); }, [user]);
+  const organization = useQuery({ queryKey: ['member-organization'], queryFn: async () => (await api.get<Organization>('/organizations/current')).data, enabled: user?.role === 'ORGANIZATION_MEMBER' });
+  const plan = useQuery({ queryKey: ['member-plan'], queryFn: async () => (await api.get<Plan>('/subscriptions/current-plan')).data, enabled: user?.role === 'ORGANIZATION_MEMBER', retry: false });
+  const profileMutation = useMutation({ mutationFn: () => api.put('/auth/profile', profile), onSuccess: () => setNotice('Your profile has been updated. Sign out and back in to refresh the header details.'), onError: () => setNotice('We could not update your profile. Please verify the information and try again.') });
+  const passwordMutation = useMutation({ mutationFn: () => api.post('/auth/change-password', password), onSuccess: () => { setPassword({ currentPassword: '', newPassword: '' }); setNotice('Your password has been changed.'); }, onError: () => setNotice('Your current password was not accepted, or the new password is too short.') });
+  if (!user) return null;
+  return <DashboardShell title="My workspace" subtitle="View your profile and your organization’s public information." email={user.email} onLogout={() => { logout(); router.replace('/login'); }}>
+    {notice && <div role="status" className="mb-5 flex justify-between rounded-xl bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-800">{notice}<button onClick={() => setNotice('')} className="underline">Dismiss</button></div>}
+    <QueryState loading={organization.isLoading || plan.isLoading} error={organization.error && !plan.error}><div className="grid gap-7 lg:grid-cols-2"><section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-center gap-3"><div className="rounded-xl bg-indigo-50 p-3 text-indigo-600"><UserRound size={21} /></div><div><h2 className="font-bold">Your profile</h2><p className="text-sm text-slate-500">Keep your account information current.</p></div></div><form onSubmit={(e) => { e.preventDefault(); profileMutation.mutate(); }} className="mt-6 grid gap-3"><label className="text-sm font-medium text-slate-700">Name<input required value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" /></label><label className="text-sm font-medium text-slate-700">Email<input required type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" /></label><button disabled={profileMutation.isPending} className="justify-self-start rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Save profile</button></form></section>
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-center gap-3"><div className="rounded-xl bg-indigo-50 p-3 text-indigo-600"><KeyRound size={21} /></div><div><h2 className="font-bold">Change password</h2><p className="text-sm text-slate-500">Use at least eight characters.</p></div></div><form onSubmit={(e) => { e.preventDefault(); passwordMutation.mutate(); }} className="mt-6 grid gap-3"><input required type="password" value={password.currentPassword} onChange={(e) => setPassword({ ...password, currentPassword: e.target.value })} placeholder="Current password" className="rounded-lg border border-slate-200 px-3 py-2" /><input required minLength={8} type="password" value={password.newPassword} onChange={(e) => setPassword({ ...password, newPassword: e.target.value })} placeholder="New password" className="rounded-lg border border-slate-200 px-3 py-2" /><button disabled={passwordMutation.isPending} className="justify-self-start rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Update password</button></form></section></div>
+      <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-center gap-3"><div className="rounded-xl bg-indigo-50 p-3 text-indigo-600"><Building2 size={21} /></div><div><h2 className="font-bold">Organization information</h2><p className="text-sm text-slate-500">Read-only details available to all organization members.</p></div></div><div className="mt-6 grid gap-4 sm:grid-cols-3"><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Organization</p><p className="mt-1 font-semibold text-slate-900">{organization.data?.name || 'Not available'}</p></div><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Status</p><div className="mt-1"><StatusBadge value={organization.data?.status} /></div></div><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Current plan</p><p className="mt-1 font-semibold text-slate-900">{plan.data ? `${plan.data.name} · ${plan.data.billingInterval.toLowerCase()}` : 'No plan assigned'}</p></div></div></section></QueryState>
+  </DashboardShell>;
 }

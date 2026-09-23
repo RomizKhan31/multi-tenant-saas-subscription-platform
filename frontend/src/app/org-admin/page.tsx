@@ -1,78 +1,51 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Building2, CreditCard, ReceiptText, UserPlus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/api';
+import { DashboardShell, formatCurrency, formatDate, QueryState, StatCard, StatusBadge } from '@/components/dashboard-ui';
+
+type Organization = { name: string; contactEmail: string; billingEmail: string; status: string };
+type Member = { _id: string; name: string; email: string; role: 'ORGANIZATION_ADMIN' | 'ORGANIZATION_MEMBER'; status: string; createdAt: string };
+type Plan = { _id: string; name: string; price: number; billingInterval: string; isActive: boolean };
+type Subscription = { _id: string; planId: string; status: string; currentPeriodEnd?: string; cancelAtPeriodEnd?: boolean };
+type Payment = { _id: string; amount: number; currency: string; status: string; createdAt: string };
+type Transaction = { _id: string; amount: number; currency: string; status: string; createdAt: string; description?: string };
+
+const getApiMessage = (error: any, fallback: string) => error?.response?.data?.error || fallback;
 
 export default function OrganizationAdminDashboard() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!user || user.role !== 'ORGANIZATION_ADMIN') {
-      router.push('/login');
-    }
-  }, [user, router]);
-
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
-
-  if (!user) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-xl font-bold">Organization Admin Dashboard</h1>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-4">{user.email}</span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Organization Management</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded shadow">
-                  <h3 className="text-lg font-semibold">Organization Profile</h3>
-                  <p className="text-gray-600">View and edit organization details</p>
-                </div>
-                <div className="bg-white p-4 rounded shadow">
-                  <h3 className="text-lg font-semibold">Members</h3>
-                  <p className="text-gray-600">Manage organization members</p>
-                </div>
-                <div className="bg-white p-4 rounded shadow">
-                  <h3 className="text-lg font-semibold">Subscription</h3>
-                  <p className="text-gray-600">View and manage subscription</p>
-                </div>
-                <div className="bg-white p-4 rounded shadow">
-                  <h3 className="text-lg font-semibold">Billing</h3>
-                  <p className="text-gray-600">View payment history</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const { user, logout, loading } = useAuth(); const router = useRouter(); const client = useQueryClient();
+  const [profile, setProfile] = useState({ name: '', contactEmail: '', billingEmail: '' }); const [invite, setInvite] = useState({ email: '', role: 'ORGANIZATION_MEMBER' }); const [notice, setNotice] = useState('');
+  useEffect(() => { if (!loading && (!user || user.role !== 'ORGANIZATION_ADMIN')) router.replace('/login'); }, [loading, user, router]);
+  const organization = useQuery({ queryKey: ['current-organization'], queryFn: async () => (await api.get<Organization>('/organizations/current')).data, enabled: user?.role === 'ORGANIZATION_ADMIN' });
+  const members = useQuery({ queryKey: ['members'], queryFn: async () => (await api.get<{ members: Member[] }>('/members')).data.members, enabled: user?.role === 'ORGANIZATION_ADMIN' });
+  const plans = useQuery({ queryKey: ['active-plans'], queryFn: async () => (await api.get<{ plans: Plan[] }>('/plans/active')).data.plans, enabled: user?.role === 'ORGANIZATION_ADMIN' });
+  const subscription = useQuery({ queryKey: ['subscription'], queryFn: async () => (await api.get<Subscription>('/subscriptions')).data, enabled: user?.role === 'ORGANIZATION_ADMIN', retry: false });
+  const payments = useQuery({ queryKey: ['payments'], queryFn: async () => (await api.get<{ payments: Payment[] }>('/payments')).data.payments, enabled: user?.role === 'ORGANIZATION_ADMIN' });
+  const transactions = useQuery({ queryKey: ['transactions'], queryFn: async () => (await api.get<{ transactions: Transaction[] }>('/transactions')).data.transactions, enabled: user?.role === 'ORGANIZATION_ADMIN' });
+  useEffect(() => { if (organization.data) setProfile({ name: organization.data.name, contactEmail: organization.data.contactEmail || '', billingEmail: organization.data.billingEmail || '' }); }, [organization.data]);
+  const invalidate = () => ['current-organization', 'members', 'subscription', 'payments', 'transactions'].forEach((key) => client.invalidateQueries({ queryKey: [key] }));
+  const saveProfile = useMutation({ mutationFn: () => api.put('/organizations/profile', profile), onSuccess: () => { invalidate(); setNotice('Organization profile saved.'); }, onError: (error) => setNotice(getApiMessage(error, 'Could not save the profile. Please review the fields and try again.')) });
+  const inviteMember = useMutation({ mutationFn: () => api.post('/members/invite', invite), onSuccess: () => { setInvite({ email: '', role: 'ORGANIZATION_MEMBER' }); invalidate(); setNotice('Invitation created successfully.'); }, onError: (error) => setNotice(getApiMessage(error, 'Could not send the invitation.')) });
+  const updateMember = useMutation({ mutationFn: ({ id, role }: { id: string; role: string }) => api.put(`/members/${id}/role`, { role }), onSuccess: () => { invalidate(); setNotice('Member role updated.'); } });
+  const removeMember = useMutation({ mutationFn: (id: string) => api.delete(`/members/${id}`), onSuccess: () => { invalidate(); setNotice('Member removed.'); } });
+  const subscriptionAction = useMutation({ mutationFn: () => api.post('/subscriptions/cancel'), onSuccess: () => { invalidate(); setNotice('Subscription updated.'); }, onError: () => setNotice('The subscription could not be updated.') });
+  const checkout = useMutation({ mutationFn: async (planId: string) => (await api.post<{ url: string }>('/payments/checkout', { planId })).data, onSuccess: (data) => { if (data.url) window.location.assign(data.url); else setNotice('Checkout could not be started. Please try again.'); }, onError: (error) => setNotice(getApiMessage(error, 'Checkout could not be started. Please try again.')) });
+  if (!user) return null;
+  const currentPlan = plans.data?.find((plan) => plan._id === subscription.data?.planId);
+  return <DashboardShell title="Organization workspace" subtitle="Manage your team, subscription, and organization records." email={user.email} onLogout={() => { logout(); router.replace('/login'); }}>
+    {notice && <div role="status" className="mb-5 flex items-center justify-between rounded-xl bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-800">{notice}<button onClick={() => setNotice('')} className="underline">Dismiss</button></div>}
+    <QueryState loading={organization.isLoading || members.isLoading || plans.isLoading || payments.isLoading || transactions.isLoading} error={organization.error || members.error || plans.error || payments.error || transactions.error}><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><StatCard label="Organization status" value={<StatusBadge value={organization.data?.status} />} icon={<Building2 size={21} />} /><StatCard label="Team members" value={members.data?.length ?? 0} icon={<Users size={21} />} /><StatCard label="Current plan" value={currentPlan?.name || 'Not set'} icon={<CreditCard size={21} />} /><StatCard label="Payments" value={payments.data?.length ?? 0} icon={<ReceiptText size={21} />} /></div>
+      <div className="mt-7 grid gap-7 xl:grid-cols-2"><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-bold">Organization profile</h2><p className="mt-1 text-sm text-slate-500">Update the contact details used by your organization.</p><form onSubmit={(e) => { e.preventDefault(); saveProfile.mutate(); }} className="mt-5 grid gap-3"><input required value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} placeholder="Organization name" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" /><input required type="email" value={profile.contactEmail} onChange={(e) => setProfile({ ...profile, contactEmail: e.target.value })} placeholder="Contact email" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" /><input required type="email" value={profile.billingEmail} onChange={(e) => setProfile({ ...profile, billingEmail: e.target.value })} placeholder="Billing email" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" /><button disabled={saveProfile.isPending} className="justify-self-start rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">{saveProfile.isPending ? 'Saving…' : 'Save profile'}</button></form></section>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><div><h2 className="font-bold">Team members</h2><p className="mt-1 text-sm text-slate-500">Invite teammates and manage their access.</p></div><UserPlus className="text-indigo-600" /></div><form onSubmit={(e) => { e.preventDefault(); inviteMember.mutate(); }} className="mt-5 flex flex-col gap-2 sm:flex-row"><input required type="email" value={invite.email} onChange={(e) => setInvite({ ...invite, email: e.target.value })} placeholder="teammate@company.com" className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" /><select value={invite.role} onChange={(e) => setInvite({ ...invite, role: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm"><option value="ORGANIZATION_MEMBER">Member</option><option value="ORGANIZATION_ADMIN">Admin</option></select><button disabled={inviteMember.isPending} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">{inviteMember.isPending ? 'Sending…' : 'Invite'}</button></form><div className="mt-4 divide-y divide-slate-100">{members.data?.map((member) => <div key={member._id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-semibold text-slate-900">{member.name}</p><p className="text-xs text-slate-500">{member.email} · joined {formatDate(member.createdAt)}</p></div><div className="flex items-center gap-2"><select value={member.role} onChange={(e) => updateMember.mutate({ id: member._id, role: e.target.value })} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs"><option value="ORGANIZATION_MEMBER">Member</option><option value="ORGANIZATION_ADMIN">Admin</option></select><button onClick={() => { if (window.confirm(`Remove ${member.name} from the organization?`)) removeMember.mutate(member._id); }} className="rounded-md px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50 hover:text-rose-900">Remove</button></div></div>)}</div></section></div>
+      <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="font-bold">Subscription & billing</h2><p className="mt-1 text-sm text-slate-500">Choose a plan or manage your current subscription.</p></div>{subscription.data && <div><StatusBadge value={subscription.data.status} /> {subscription.data.currentPeriodEnd && <span className="ml-2 text-xs text-slate-500">Renews {formatDate(subscription.data.currentPeriodEnd)}</span>}</div>}</div><div className="mt-5 grid gap-3 md:grid-cols-3">{plans.data?.map((plan) => { const isActivePlan = plan._id === subscription.data?.planId && subscription.data?.status === 'ACTIVE'; return <article key={plan._id} className={`rounded-xl border p-4 ${plan._id === subscription.data?.planId ? 'border-indigo-300 bg-indigo-50/40' : 'border-slate-200'}`}><p className="font-bold">{plan.name}</p><p className="mt-1 text-xl font-bold">{formatCurrency(plan.price)} <span className="text-sm font-normal text-slate-500">/ {plan.billingInterval.toLowerCase()}</span></p><button onClick={() => checkout.mutate(plan._id)} disabled={checkout.isPending || isActivePlan} className="mt-4 w-full rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-700 hover:border-indigo-500 hover:bg-indigo-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50">{checkout.isPending ? 'Opening secure checkout…' : isActivePlan ? 'Current plan' : 'Continue to secure checkout'}</button></article>; })}</div>{subscription.data?.status === 'ACTIVE' && <button onClick={() => { if (window.confirm('Cancel this subscription at the end of its billing period?')) subscriptionAction.mutate(); }} className="mt-5 rounded-lg px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 hover:text-rose-900">Cancel subscription</button>}</section>
+      <div className="mt-7 grid gap-7 xl:grid-cols-2"><History title="Payment history" items={payments.data || []} /><History title="Transactions" items={transactions.data || []} /></div>
+    </QueryState>
+  </DashboardShell>;
 }
+
+function History({ title, items }: { title: string; items: Array<Payment | Transaction> }) { return <section className="rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 p-5"><h2 className="font-bold">{title}</h2></div>{items.length ? <div className="divide-y divide-slate-100">{items.slice(0, 6).map((item) => <div key={item._id} className="flex items-center justify-between gap-4 p-4"><div><p className="font-semibold">{formatCurrency(item.amount, item.currency.toUpperCase())}</p><p className="mt-1 text-xs text-slate-500">{formatDate(item.createdAt)}</p></div><StatusBadge value={item.status} /></div>)}</div> : <p className="p-8 text-center text-sm text-slate-500">Nothing to show yet.</p>}</section>; }

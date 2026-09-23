@@ -6,6 +6,7 @@ import api from '@/lib/api';
 interface User {
   userId: string;
   email: string;
+  name: string;
   role: 'PLATFORM_ADMIN' | 'ORGANIZATION_ADMIN' | 'ORGANIZATION_MEMBER';
   organizationId?: string;
 }
@@ -30,15 +31,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedUser = localStorage.getItem('user');
     
     if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } catch {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password });
-    const { user: userData, token: newToken } = response.data;
+    const { user: responseUser, token: newToken } = response.data;
+    const userData: User = {
+      ...responseUser,
+      userId: responseUser._id,
+      organizationId: responseUser.organizationId?.toString(),
+    };
     
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(userData));
