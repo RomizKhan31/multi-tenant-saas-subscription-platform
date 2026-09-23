@@ -68,6 +68,7 @@ export default function PlatformAdminDashboard() {
   const [transactionStatus, setTransactionStatus] = useState('');
   const [transactionOrgId, setTransactionOrgId] = useState('');
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [planForm, setPlanForm] = useState({
@@ -154,13 +155,25 @@ export default function PlatformAdminDashboard() {
   const organizationAction = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: 'suspend' | 'reactivate' }) =>
       api.post(`/organizations/${id}/${action}`),
-    onSuccess: invalidate,
+    onSuccess: (_, variables) => {
+      setNotice({
+        type: 'success',
+        message: `Organization ${variables.action === 'suspend' ? 'suspended' : 'reactivated'} successfully.`,
+      });
+      invalidate();
+    },
+    onError: (error: any) => {
+      setNotice({
+        type: 'error',
+        message: error?.response?.data?.error || 'Organization status update failed.',
+      });
+    },
   });
 
   const planAction = useMutation({
     mutationFn: async (data: { id?: string; payload: typeof planForm }) => {
       const payload = {
-        name: data.payload.name,
+        name: data.payload.name.trim(),
         price: Number(data.payload.price),
         billingInterval: data.payload.billingInterval,
         features: data.payload.features
@@ -170,17 +183,41 @@ export default function PlatformAdminDashboard() {
       };
       return data.id ? api.put(`/plans/${data.id}`, payload) : api.post('/plans', payload);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       setEditingPlan(null);
       setPlanForm({ name: '', price: '', billingInterval: 'MONTHLY', features: '' });
+      setNotice({
+        type: 'success',
+        message: variables.id
+          ? 'Plan updated successfully.'
+          : 'Plan created successfully! It is now listed below and available for onboarding.',
+      });
       invalidate();
+    },
+    onError: (error: any) => {
+      setNotice({
+        type: 'error',
+        message: error?.response?.data?.error || error?.message || 'Failed to save plan.',
+      });
     },
   });
 
   const togglePlan = useMutation({
     mutationFn: async (plan: Plan) =>
       api.post(`/plans/${plan._id}/${plan.isActive ? 'disable' : 'enable'}`),
-    onSuccess: invalidate,
+    onSuccess: (_, plan) => {
+      setNotice({
+        type: 'success',
+        message: `Plan "${plan.name}" ${plan.isActive ? 'disabled' : 'enabled'} successfully.`,
+      });
+      invalidate();
+    },
+    onError: (error: any) => {
+      setNotice({
+        type: 'error',
+        message: error?.response?.data?.error || 'Failed to toggle plan status.',
+      });
+    },
   });
 
   const overview = useMemo(
@@ -218,6 +255,22 @@ export default function PlatformAdminDashboard() {
         router.replace('/login');
       }}
     >
+      {notice && (
+        <div
+          role="status"
+          className={`mb-5 flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium ${
+            notice.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border border-rose-200'
+          }`}
+        >
+          <span>{notice.message}</span>
+          <button onClick={() => setNotice(null)} className="underline ml-4">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <QueryState
         loading={
           organizations.isLoading ||
@@ -325,7 +378,11 @@ export default function PlatformAdminDashboard() {
                           {organization.name}
                         </td>
                         <td className="px-5 py-4 text-slate-600">
-                          {plan?.name || 'No active plan'}
+                          {plan?.name ? (
+                            <span className="font-semibold text-slate-900">{plan.name}</span>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">No active subscription</span>
+                          )}
                         </td>
                         <td className="px-5 py-4 text-slate-600">
                           {memberCounts.data?.[organization._id] ?? '—'}
@@ -413,14 +470,20 @@ export default function PlatformAdminDashboard() {
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-bold text-slate-950">Plan management</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-bold text-slate-950">Plan management</h2>
+                  <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700">
+                    {plans.data?.length ?? 0} plans
+                  </span>
+                </div>
                 <p className="mt-1 text-sm text-slate-500">
-                  Create, update, and activate subscription plans.
+                  Create, update, and activate subscription plans for tenant onboarding.
                 </p>
               </div>
               <Plus className="text-indigo-600" />
             </div>
             <form
+              id="plan-form"
               onSubmit={(event) => {
                 event.preventDefault();
                 planAction.mutate({ id: editingPlan?._id, payload: planForm });
@@ -432,7 +495,7 @@ export default function PlatformAdminDashboard() {
                 placeholder="Plan name"
                 value={planForm.name}
                 onChange={(event) => setPlanForm({ ...planForm, name: event.target.value })}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <input
                 required
@@ -442,14 +505,14 @@ export default function PlatformAdminDashboard() {
                 placeholder="Price (USD)"
                 value={planForm.price}
                 onChange={(event) => setPlanForm({ ...planForm, price: event.target.value })}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <select
                 value={planForm.billingInterval}
                 onChange={(event) =>
                   setPlanForm({ ...planForm, billingInterval: event.target.value })
                 }
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="MONTHLY">Monthly</option>
                 <option value="YEARLY">Yearly</option>
@@ -458,14 +521,15 @@ export default function PlatformAdminDashboard() {
                 placeholder="Features, comma separated"
                 value={planForm.features}
                 onChange={(event) => setPlanForm({ ...planForm, features: event.target.value })}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <div className="flex gap-2 sm:col-span-2">
                 <button
+                  type="submit"
                   disabled={planAction.isPending}
-                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition"
                 >
-                  {editingPlan ? 'Save changes' : 'Create plan'}
+                  {planAction.isPending ? 'Saving plan...' : editingPlan ? 'Save changes' : 'Create plan'}
                 </button>
                 {editingPlan && (
                   <button
@@ -487,47 +551,67 @@ export default function PlatformAdminDashboard() {
               </div>
             </form>
             <div className="mt-5 divide-y divide-slate-100">
-              {plans.data?.map((plan) => (
-                <div
-                  key={plan._id}
-                  className="flex flex-wrap items-center justify-between gap-3 py-3"
-                >
-                  <div>
-                    <p className="font-semibold text-slate-900">
-                      {plan.name}{' '}
-                      <span className="font-normal text-slate-500">
-                        · {formatCurrency(plan.price)}/
-                        {plan.billingInterval === 'MONTHLY' ? 'mo' : 'yr'}
-                      </span>
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {plan.features.join(' · ') || 'No features specified'}
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        setEditingPlan(plan);
-                        setPlanForm({
-                          name: plan.name,
-                          price: String(plan.price),
-                          billingInterval: plan.billingInterval,
-                          features: plan.features.join(', '),
-                        });
-                      }}
-                      className="text-sm font-semibold text-indigo-700"
+              {plans.data && plans.data.length > 0 ? (
+                plans.data.map((plan) => {
+                  const subscriberCount =
+                    subscriptions.data?.filter(
+                      (s) => s.planId === plan._id && s.status === 'ACTIVE'
+                    ).length ?? 0;
+                  return (
+                    <div
+                      key={plan._id}
+                      className="flex flex-wrap items-center justify-between gap-3 py-3"
                     >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => togglePlan.mutate(plan)}
-                      className="text-sm font-semibold text-slate-700"
-                    >
-                      {plan.isActive ? 'Disable' : 'Enable'}
-                    </button>
-                  </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-900">{plan.name}</p>
+                          <StatusBadge value={plan.isActive ? 'ACTIVE' : 'SUSPENDED'} />
+                          <span className="text-xs text-slate-400">
+                            ({subscriberCount} active {subscriberCount === 1 ? 'tenant' : 'tenants'})
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-600 mt-0.5">
+                          {formatCurrency(plan.price)} / {plan.billingInterval === 'MONTHLY' ? 'month' : 'year'}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {plan.features?.length > 0 ? plan.features.join(' · ') : 'No features specified'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => {
+                            setEditingPlan(plan);
+                            setPlanForm({
+                              name: plan.name,
+                              price: String(plan.price),
+                              billingInterval: plan.billingInterval,
+                              features: plan.features?.join(', ') || '',
+                            });
+                          }}
+                          className="text-sm font-semibold text-indigo-700 hover:text-indigo-900"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => togglePlan.mutate(plan)}
+                          disabled={togglePlan.isPending}
+                          className={`text-sm font-semibold ${
+                            plan.isActive
+                              ? 'text-amber-700 hover:text-amber-900'
+                              : 'text-emerald-700 hover:text-emerald-900'
+                          }`}
+                        >
+                          {plan.isActive ? 'Disable' : 'Enable'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-6 text-center text-sm text-slate-500 bg-slate-50 rounded-xl mt-3">
+                  No plans created yet. Use the form above to create your first subscription plan.
                 </div>
-              ))}
+              )}
             </div>
           </section>
 

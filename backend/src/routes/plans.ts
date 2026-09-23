@@ -9,7 +9,7 @@ export const createPlanRoutes = (planController: PlanController): Router => {
   // Platform admin only
   router.post('/', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), planController.createPlan);
   router.get('/', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), planController.getPlans);
-  router.get('/active', requireAuth, planController.getActivePlans);
+  router.get('/active', planController.getActivePlans);
   router.get('/:id', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), planController.getPlan);
   router.put('/:id', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), planController.updatePlan);
   router.post('/:id/disable', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), planController.disablePlan);
