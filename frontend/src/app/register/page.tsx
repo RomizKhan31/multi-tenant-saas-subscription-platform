@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Check, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
@@ -24,6 +24,11 @@ export default function RegisterPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch available active plans
   const { data: plansData, isLoading: plansLoading } = useQuery<{ plans: Plan[] }>({
@@ -35,17 +40,20 @@ export default function RegisterPage() {
   });
 
   const plans = plansData?.plans || [];
+  const effectivePlanId = selectedPlanId || (plans.length > 0 ? plans[0]._id : '');
 
-  // Automatically select the first plan once loaded if none selected
-  if (plans.length > 0 && !selectedPlanId) {
-    setSelectedPlanId(plans[0]._id);
-  }
+  // Keep selectedPlanId in sync via effect rather than during render
+  useEffect(() => {
+    if (plans.length > 0 && !selectedPlanId) {
+      setSelectedPlanId(plans[0]._id);
+    }
+  }, [plans, selectedPlanId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!selectedPlanId) {
+    if (!effectivePlanId) {
       setError('Please select a subscription plan to proceed.');
       return;
     }
@@ -63,7 +71,7 @@ export default function RegisterPage() {
         adminName,
         email,
         password,
-        planId: selectedPlanId,
+        planId: effectivePlanId,
       });
 
       if (response.data.checkoutUrl) {
@@ -77,6 +85,8 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  const isSubmitDisabled = !mounted || loading || plansLoading || !effectivePlanId;
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -172,7 +182,7 @@ export default function RegisterPage() {
               </span>
             </div>
 
-            {plansLoading ? (
+            {!mounted || plansLoading ? (
               <div className="flex items-center justify-center p-8 text-slate-500 text-sm">
                 <Loader2 className="animate-spin mr-2" size={18} /> Loading available plans...
               </div>
@@ -183,7 +193,7 @@ export default function RegisterPage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                 {plans.map((plan) => {
-                  const isSelected = selectedPlanId === plan._id;
+                  const isSelected = effectivePlanId === plan._id;
                   return (
                     <div
                       key={plan._id}
@@ -234,7 +244,7 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              disabled={loading || plansLoading || !selectedPlanId}
+              disabled={isSubmitDisabled}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed order-1 sm:order-2"
             >
               {loading ? (
