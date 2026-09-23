@@ -22,10 +22,21 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+    const isPublicAuthRoute = 
+      error.config?.url?.includes('/auth/login') ||
+      error.config?.url?.includes('/auth/register') ||
+      error.config?.url?.includes('/auth/onboard-status') ||
+      error.config?.url?.includes('/auth/forgot-password') ||
+      error.config?.url?.includes('/auth/reset-password') ||
+      error.config?.url?.includes('/auth/accept-invitation');
+
+    if (error.response?.status === 401 && !isPublicAuthRoute && typeof window !== 'undefined') {
+      const hadToken = localStorage.getItem('token');
+      if (hadToken) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
