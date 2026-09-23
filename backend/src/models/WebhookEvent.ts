@@ -29,8 +29,6 @@ const WebhookEventSchema = new Schema<IWebhookEvent>(
   }
 );
 
-// Index for faster lookups
-WebhookEventSchema.index({ stripeEventId: 1 });
-WebhookEventSchema.index({ processed: 1 });
+// Index for faster lookups (stripeEventId has unique: true and index: true, processed added)
 
 export const WebhookEvent: Model<IWebhookEvent> = mongoose.model<IWebhookEvent>('WebhookEvent', WebhookEventSchema);

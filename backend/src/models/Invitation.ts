@@ -40,10 +40,6 @@ const InvitationSchema = new Schema<IInvitation>(
   }
 );
 
-// Index for faster lookups
-InvitationSchema.index({ organizationId: 1 });
-InvitationSchema.index({ email: 1 });
-InvitationSchema.index({ token: 1 });
-InvitationSchema.index({ expiresAt: 1 });
+// Index for faster lookups (organizationId is indexed in schema, token has unique: true, email and expiresAt added)
 
 export const Invitation: Model<IInvitation> = mongoose.model<IInvitation>('Invitation', InvitationSchema);

@@ -39,9 +39,6 @@ const TransactionSchema = new Schema<ITransaction>(
   }
 );
 
-// Index for faster lookups
-TransactionSchema.index({ organizationId: 1 });
-TransactionSchema.index({ status: 1 });
-TransactionSchema.index({ createdAt: -1 });
+// Index for faster lookups (organizationId is indexed in schema, createdAt and status added)
 
 export const Transaction: Model<ITransaction> = mongoose.model<ITransaction>('Transaction', TransactionSchema);

@@ -32,8 +32,6 @@ const PlanSchema = new Schema<IPlan>(
   }
 );
 
-// Index for faster lookups
-PlanSchema.index({ name: 1 });
-PlanSchema.index({ isActive: 1 });
+// Index for faster lookups (name and isActive are indexed in schema)
 
 export const Plan: Model<IPlan> = mongoose.model<IPlan>('Plan', PlanSchema);

@@ -44,9 +44,6 @@ const PaymentSchema = new Schema<IPayment>(
   }
 );
 
-// Index for faster lookups
-PaymentSchema.index({ organizationId: 1 });
-PaymentSchema.index({ status: 1 });
-PaymentSchema.index({ stripePaymentIntentId: 1 });
+// Index for faster lookups (organizationId and stripePaymentIntentId are indexed in schema)
 
 export const Payment: Model<IPayment> = mongoose.model<IPayment>('Payment', PaymentSchema);

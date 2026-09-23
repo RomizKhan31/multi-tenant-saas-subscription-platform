@@ -31,8 +31,6 @@ const OrganizationSchema = new Schema<IOrganization>(
   }
 );
 
-// Index for faster lookups
-OrganizationSchema.index({ name: 1 });
-OrganizationSchema.index({ status: 1 });
+// Index for faster lookups (name and status are indexed in schema)
 
 export const Organization: Model<IOrganization> = mongoose.model<IOrganization>('Organization', OrganizationSchema);

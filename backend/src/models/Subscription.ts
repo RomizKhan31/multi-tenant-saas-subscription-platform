@@ -43,9 +43,6 @@ const SubscriptionSchema = new Schema<ISubscription>(
   }
 );
 
-// Index for faster lookups
-SubscriptionSchema.index({ organizationId: 1 });
-SubscriptionSchema.index({ status: 1 });
-SubscriptionSchema.index({ stripeSubscriptionId: 1 });
+// Index for faster lookups (organizationId and stripeSubscriptionId are indexed in schema)
 
 export const Subscription: Model<ISubscription> = mongoose.model<ISubscription>('Subscription', SubscriptionSchema);

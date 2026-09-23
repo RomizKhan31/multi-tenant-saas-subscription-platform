@@ -42,9 +42,7 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-// Index for faster lookups
-UserSchema.index({ email: 1 });
-UserSchema.index({ organizationId: 1 });
+// Index for faster lookups (email has unique: true, organizationId has index: true)
 
 // Hash password before saving
 UserSchema.pre('save', async function (next) {
