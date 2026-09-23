@@ -106,7 +106,8 @@ const startServer = async (): Promise<void> => {
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    const message = error instanceof Error ? error.message : 'Unknown startup error';
+    console.error(`Failed to start server: ${message}`);
     process.exit(1);
   }
 };
