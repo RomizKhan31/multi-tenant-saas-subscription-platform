@@ -129,7 +129,41 @@ export class WebhookService {
     }
   }
 
-  private async handleCheckoutSessionCompleted(checkoutSession: any): Promise<void> {
+  async syncAndProcessSession(sessionId: string): Promise<boolean> {
+    if (!this.pendingRegistrationRepository) {
+      return false;
+    }
+
+    const pendingReg = await this.pendingRegistrationRepository.findByStripeCheckoutSessionId(sessionId);
+    if (!pendingReg) {
+      return false;
+    }
+
+    if (pendingReg.status === 'COMPLETED') {
+      return true;
+    }
+
+    // If Stripe key is unavailable, we cannot query Stripe
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
+      return false;
+    }
+
+    // Authoritative check with Stripe API
+    try {
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      if (session.payment_status === 'paid' || session.status === 'complete') {
+        await this.handleCheckoutSessionCompleted(session);
+        return true;
+      }
+    } catch (err: any) {
+      // Non-existent or simulated test session ID remains in its current status
+      return false;
+    }
+
+    return false;
+  }
+
+  async handleCheckoutSessionCompleted(checkoutSession: any): Promise<void> {
     const metadata = checkoutSession.metadata || {};
     const { organizationId, planId, pendingRegistrationId } = metadata;
 

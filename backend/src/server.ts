@@ -98,6 +98,7 @@ const webhookService = new services.WebhookService(
   pendingRegistrationRepository,
   planRepository
 );
+authService.setWebhookService(webhookService);
 
 // Initialize controllers
 const authController = new controllers.AuthController(authService);

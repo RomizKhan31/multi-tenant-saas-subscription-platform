@@ -6,14 +6,20 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { stripe } from '../config/stripe';
 import { sendEmail } from '../utils/email';
+import { WebhookService } from './WebhookService';
 
 export class AuthService {
   constructor(
     private userRepository: UserRepository,
     private passwordResetTokenRepository: PasswordResetTokenRepository,
     private pendingRegistrationRepository?: PendingRegistrationRepository,
-    private planRepository?: PlanRepository
+    private planRepository?: PlanRepository,
+    private webhookService?: WebhookService
   ) {}
+
+  setWebhookService(webhookService: WebhookService): void {
+    this.webhookService = webhookService;
+  }
 
   async register(userData: {
     email: string;
@@ -115,6 +121,9 @@ export class AuthService {
         success_url: `${frontendUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${frontendUrl}/payment/cancel?session_id={CHECKOUT_SESSION_ID}`,
         customer_email: email,
+        payment_intent_data: {
+          receipt_email: email,
+        },
         metadata: {
           pendingRegistrationId: pendingReg._id.toString(),
           planId: plan._id.toString(),
@@ -145,15 +154,23 @@ export class AuthService {
       return { status: 'NOT_FOUND' };
     }
 
-    const pendingReg = await this.pendingRegistrationRepository.findByStripeCheckoutSessionId(sessionId);
+    let pendingReg = await this.pendingRegistrationRepository.findByStripeCheckoutSessionId(sessionId);
     if (!pendingReg) {
       return { status: 'NOT_FOUND' };
     }
 
+    // If still pending, verify with Stripe and provision account immediately
+    if (pendingReg.status === 'PENDING' && this.webhookService) {
+      const synced = await this.webhookService.syncAndProcessSession(sessionId);
+      if (synced) {
+        pendingReg = await this.pendingRegistrationRepository.findByStripeCheckoutSessionId(sessionId);
+      }
+    }
+
     return {
-      status: pendingReg.status,
-      organizationName: pendingReg.organizationName,
-      email: pendingReg.email,
+      status: pendingReg ? pendingReg.status : 'NOT_FOUND',
+      organizationName: pendingReg?.organizationName,
+      email: pendingReg?.email,
     };
   }
 

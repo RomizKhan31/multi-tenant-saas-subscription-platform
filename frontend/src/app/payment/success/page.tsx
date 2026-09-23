@@ -46,13 +46,15 @@ function PaymentSuccessContent() {
           // Still pending
           if (attempts >= maxAttempts) {
             clearInterval(intervalId);
-            setStatus('active'); // Webhook may take a bit longer or email confirmation was sent
+            setStatus('failed');
+            setErrorMessage('Payment confirmation is taking longer than expected. If your card was charged, please refresh this page in a moment.');
           }
         }
       } catch (err: any) {
         if (attempts >= maxAttempts) {
           clearInterval(intervalId);
-          setStatus('active');
+          setStatus('failed');
+          setErrorMessage('Could not verify onboarding status. Please refresh this page or contact support.');
         }
       }
     };
