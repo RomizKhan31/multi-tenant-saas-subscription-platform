@@ -1,8 +1,14 @@
-import mongoose, { Schema, Model } from 'mongoose';
+import mongoose, { HydratedDocument, Model, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { IUser, UserRole } from '../types';
 
-const UserSchema = new Schema<IUser>(
+export interface UserMethods {
+  comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
+export type UserDocument = HydratedDocument<IUser, UserMethods>;
+
+const UserSchema = new Schema<IUser, Model<IUser, {}, UserMethods>, UserMethods>(
   {
     email: {
       type: String,
@@ -64,4 +70,4 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-export const User: Model<IUser> = mongoose.model<IUser>('User', UserSchema);
+export const User = mongoose.model<IUser, Model<IUser, {}, UserMethods>>('User', UserSchema);

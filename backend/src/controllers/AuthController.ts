@@ -1,14 +1,12 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services';
 import { z } from 'zod';
-import { UserRole } from '../types';
+import { IAuthRequest } from '../types';
 
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   name: z.string().min(1),
-  role: z.nativeEnum(UserRole).optional(),
-  organizationId: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -29,6 +27,11 @@ const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8),
 });
+
+const updateProfileSchema = z.object({
+  name: z.string().trim().min(1).optional(),
+  email: z.string().email().optional(),
+}).refine((data) => data.name || data.email, { message: 'Provide a name or email to update' });
 
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -95,6 +98,20 @@ export class AuthController {
       const userId = (req as any).user.userId;
       await this.authService.changePassword(userId, validatedData.currentPassword, validatedData.newPassword);
       res.status(200).json({ message: 'Password changed successfully' });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Validation error', details: error.errors });
+      } else {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  };
+
+  updateProfile = async (req: IAuthRequest, res: Response): Promise<void> => {
+    try {
+      const validatedData = updateProfileSchema.parse(req.body);
+      const user = await this.authService.updateProfile(req.user!.userId.toString(), validatedData);
+      res.status(200).json({ user });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: 'Validation error', details: error.errors });

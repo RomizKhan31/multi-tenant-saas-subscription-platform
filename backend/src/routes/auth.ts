@@ -11,6 +11,7 @@ export const createAuthRoutes = (authController: AuthController): Router => {
   router.post('/forgot-password', authRateLimiter, authController.forgotPassword);
   router.post('/reset-password', authRateLimiter, authController.resetPassword);
   router.post('/change-password', requireAuth, authController.changePassword);
+  router.put('/profile', requireAuth, authController.updateProfile);
 
   return router;
 };

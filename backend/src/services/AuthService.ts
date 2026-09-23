@@ -2,6 +2,7 @@ import { UserRepository } from '../repositories';
 import { PasswordResetTokenRepository } from '../repositories';
 import { generateToken } from '../utils/jwt';
 import { IUser, UserRole } from '../types';
+import { Types } from 'mongoose';
 import crypto from 'crypto';
 
 export class AuthService {
@@ -14,7 +15,6 @@ export class AuthService {
     email: string;
     password: string;
     name: string;
-    role?: UserRole;
     organizationId?: string;
   }): Promise<{ user: Omit<IUser, 'password'>; token: string }> {
     const existingUser = await this.userRepository.findByEmail(userData.email);
@@ -22,7 +22,10 @@ export class AuthService {
       throw new Error('User with this email already exists');
     }
 
-    const user = await this.userRepository.create(userData);
+    const user = await this.userRepository.create({
+      ...userData,
+      organizationId: userData.organizationId ? new Types.ObjectId(userData.organizationId) : undefined,
+    });
 
     const token = generateToken({
       userId: user._id.toString(),
@@ -37,12 +40,12 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<{ user: Omit<IUser, 'password'>; token: string }> {
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findAuthByEmail(email);
     if (!user) {
       throw new Error('Invalid credentials');
     }
 
-    const isPasswordValid = await (user as any).comparePassword(password);
+    const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       throw new Error('Invalid credentials');
     }
@@ -58,9 +61,26 @@ export class AuthService {
       organizationId: user.organizationId?.toString(),
     });
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, ...userWithoutPassword } = user.toObject();
 
     return { user: userWithoutPassword, token };
+  }
+
+  async updateProfile(userId: string, profile: { name?: string; email?: string }): Promise<Omit<IUser, 'password'>> {
+    if (profile.email) {
+      const existingUser = await this.userRepository.findByEmail(profile.email);
+      if (existingUser && existingUser._id.toString() !== userId) {
+        throw new Error('An account with this email already exists');
+      }
+    }
+
+    const user = await this.userRepository.update(userId as any, profile);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
   async forgotPassword(email: string): Promise<void> {
@@ -98,28 +118,23 @@ export class AuthService {
       throw new Error('Reset token has expired');
     }
 
-    const user = await this.userRepository.findById(resetToken.userId);
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    await this.userRepository.update(user._id, { password: newPassword });
+    await this.userRepository.updatePassword(resetToken.userId, newPassword);
 
     // Delete the used token
     await this.passwordResetTokenRepository.delete(resetToken._id);
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
-    const user = await this.userRepository.findById(userId as any);
+    const user = await this.userRepository.findAuthById(userId as any);
     if (!user) {
       throw new Error('User not found');
     }
 
-    const isPasswordValid = await (user as any).comparePassword(currentPassword);
+    const isPasswordValid = await user.comparePassword(currentPassword);
     if (!isPasswordValid) {
       throw new Error('Current password is incorrect');
     }
 
-    await this.userRepository.update(user._id, { password: newPassword });
+    await this.userRepository.updatePassword(user._id, newPassword);
   }
 }

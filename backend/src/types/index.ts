@@ -1,4 +1,4 @@
-import { Document, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { Request } from 'express';
 
 export enum UserRole {
@@ -43,7 +43,7 @@ export enum BillingInterval {
   YEARLY = 'YEARLY',
 }
 
-export interface IUser extends Document {
+export interface IUser {
   _id: Types.ObjectId;
   email: string;
   password: string;
@@ -55,7 +55,7 @@ export interface IUser extends Document {
   updatedAt: Date;
 }
 
-export interface IOrganization extends Document {
+export interface IOrganization {
   _id: Types.ObjectId;
   name: string;
   contactEmail: string;
@@ -65,7 +65,7 @@ export interface IOrganization extends Document {
   updatedAt: Date;
 }
 
-export interface IPlan extends Document {
+export interface IPlan {
   _id: Types.ObjectId;
   name: string;
   price: number;
@@ -76,7 +76,7 @@ export interface IPlan extends Document {
   updatedAt: Date;
 }
 
-export interface ISubscription extends Document {
+export interface ISubscription {
   _id: Types.ObjectId;
   organizationId: Types.ObjectId;
   planId: Types.ObjectId;
@@ -90,7 +90,7 @@ export interface ISubscription extends Document {
   updatedAt: Date;
 }
 
-export interface IPayment extends Document {
+export interface IPayment {
   _id: Types.ObjectId;
   organizationId: Types.ObjectId;
   subscriptionId: Types.ObjectId;
@@ -103,7 +103,7 @@ export interface IPayment extends Document {
   updatedAt: Date;
 }
 
-export interface ITransaction extends Document {
+export interface ITransaction {
   _id: Types.ObjectId;
   organizationId: Types.ObjectId;
   paymentId: Types.ObjectId;
@@ -115,7 +115,7 @@ export interface ITransaction extends Document {
   updatedAt: Date;
 }
 
-export interface IInvitation extends Document {
+export interface IInvitation {
   _id: Types.ObjectId;
   organizationId: Types.ObjectId;
   email: string;
@@ -127,7 +127,7 @@ export interface IInvitation extends Document {
   updatedAt: Date;
 }
 
-export interface IPasswordResetToken extends Document {
+export interface IPasswordResetToken {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
   token: string;
@@ -135,7 +135,7 @@ export interface IPasswordResetToken extends Document {
   createdAt: Date;
 }
 
-export interface IWebhookEvent extends Document {
+export interface IWebhookEvent {
   _id: Types.ObjectId;
   stripeEventId: string;
   eventType: string;
@@ -152,7 +152,7 @@ export interface IAuthRequest extends Request {
     role: UserRole;
     organizationId?: Types.ObjectId;
   };
-  body?: any;
-  query?: any;
-  params?: any;
+  body: any;
+  query: any;
+  params: any;
 }
