@@ -76,6 +76,39 @@ export class OrganizationController {
     }
   };
 
+  getCurrentOrganization = async (req: IAuthRequest, res: Response): Promise<void> => {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        res.status(403).json({ error: 'No organization associated with user' });
+        return;
+      }
+
+      const organization = await this.organizationService.getOrganizationById(organizationId);
+      if (!organization) {
+        res.status(404).json({ error: 'Organization not found' });
+        return;
+      }
+
+      const response: Record<string, unknown> = {
+        _id: organization._id,
+        name: organization.name,
+        status: organization.status,
+        createdAt: organization.createdAt,
+      };
+
+      if (req.user?.role === 'ORGANIZATION_ADMIN') {
+        response.contactEmail = organization.contactEmail;
+        response.billingEmail = organization.billingEmail;
+      }
+
+      // Members receive only the non-financial organization information they need.
+      res.status(200).json(response);
+    } catch {
+      res.status(500).json({ error: 'Unable to load organization' });
+    }
+  };
+
   suspendOrganization = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;

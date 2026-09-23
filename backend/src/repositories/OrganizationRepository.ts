@@ -1,4 +1,4 @@
-import { Organization, IOrganization } from '../models';
+import { Organization } from '../models';
 import { IOrganization as IOrganizationType } from '../types';
 import { Types } from 'mongoose';
 
@@ -7,12 +7,12 @@ export class OrganizationRepository {
     return Organization.findById(organizationId).lean();
   }
 
-  async create(organizationData: Partial<IOrganization>): Promise<IOrganization> {
+  async create(organizationData: Partial<IOrganizationType>): Promise<IOrganizationType> {
     const organization = new Organization(organizationData);
     return organization.save();
   }
 
-  async update(organizationId: Types.ObjectId, updateData: Partial<IOrganization>): Promise<IOrganizationType | null> {
+  async update(organizationId: Types.ObjectId, updateData: Partial<IOrganizationType>): Promise<IOrganizationType | null> {
     return Organization.findByIdAndUpdate(organizationId, updateData, { new: true }).lean();
   }
 
