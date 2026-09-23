@@ -28,16 +28,24 @@ const app: Express = express();
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  })
+);
 
 // Rate limiting
 app.use(generalRateLimiter);
 
-// Body parsing middleware
-app.use(express.json());
+// Body parsing middleware - preserves raw buffer on req.rawBody for Stripe signature verification
+app.use(
+  express.json({
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 
 // Initialize repositories
@@ -50,13 +58,34 @@ const transactionRepository = new repositories.TransactionRepository();
 const invitationRepository = new repositories.InvitationRepository();
 const passwordResetTokenRepository = new repositories.PasswordResetTokenRepository();
 const webhookEventRepository = new repositories.WebhookEventRepository();
+const pendingRegistrationRepository = new repositories.PendingRegistrationRepository();
 
 // Initialize services
-const authService = new services.AuthService(userRepository, passwordResetTokenRepository);
-const organizationService = new services.OrganizationService(organizationRepository, userRepository);
+const authService = new services.AuthService(
+  userRepository,
+  passwordResetTokenRepository,
+  pendingRegistrationRepository,
+  planRepository
+);
+const organizationService = new services.OrganizationService(
+  organizationRepository,
+  userRepository,
+  subscriptionRepository,
+  paymentRepository,
+  transactionRepository
+);
 const planService = new services.PlanService(planRepository);
-const subscriptionService = new services.SubscriptionService(subscriptionRepository, planRepository);
-const paymentService = new services.PaymentService(paymentRepository, subscriptionRepository, planRepository);
+const subscriptionService = new services.SubscriptionService(
+  subscriptionRepository,
+  planRepository,
+  userRepository,
+  organizationRepository
+);
+const paymentService = new services.PaymentService(
+  paymentRepository,
+  subscriptionRepository,
+  planRepository
+);
 const transactionService = new services.TransactionService(transactionRepository, paymentRepository);
 const memberService = new services.MemberService(userRepository, invitationRepository);
 const webhookService = new services.WebhookService(
@@ -65,7 +94,9 @@ const webhookService = new services.WebhookService(
   userRepository,
   subscriptionRepository,
   paymentRepository,
-  transactionRepository
+  transactionRepository,
+  pendingRegistrationRepository,
+  planRepository
 );
 
 // Initialize controllers
@@ -97,6 +128,20 @@ app.get('/health', (req: Request, res: Response) => {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+// Scheduled job: check expiring subscriptions once every 24 hours
+const startScheduledJobs = () => {
+  const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+  setInterval(async () => {
+    try {
+      console.log('[Scheduler] Running daily expiring subscription check...');
+      const sent = await subscriptionService.checkExpiringSubscriptions();
+      console.log(`[Scheduler] Expiring subscription check complete. Reminders sent: ${sent}`);
+    } catch (err: any) {
+      console.error('[Scheduler] Error checking expiring subscriptions:', err.message);
+    }
+  }, TWENTY_FOUR_HOURS);
+};
+
 // Start server
 const startServer = async (): Promise<void> => {
   try {
@@ -104,6 +149,7 @@ const startServer = async (): Promise<void> => {
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      startScheduledJobs();
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown startup error';

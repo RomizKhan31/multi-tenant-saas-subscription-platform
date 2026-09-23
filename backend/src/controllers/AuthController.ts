@@ -9,6 +9,14 @@ const registerSchema = z.object({
   name: z.string().min(1),
 });
 
+const registerOnboardSchema = z.object({
+  organizationName: z.string().min(2, 'Organization name must be at least 2 characters'),
+  name: z.string().min(2, 'Admin name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  planId: z.string().min(1, 'Please select a subscription plan'),
+});
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
@@ -47,6 +55,36 @@ export class AuthController {
       } else {
         res.status(400).json({ error: error.message });
       }
+    }
+  };
+
+  registerOnboard = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const validatedData = registerOnboardSchema.parse(req.body);
+      const result = await this.authService.registerOnboard(validatedData);
+      res.status(200).json(result);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Validation error', details: error.errors });
+      } else if (error.message.includes('already exists')) {
+        res.status(409).json({ error: error.message });
+      } else {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  };
+
+  getOnboardStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const sessionId = req.query.sessionId as string;
+      if (!sessionId) {
+        res.status(400).json({ error: 'Session ID is required' });
+        return;
+      }
+      const status = await this.authService.getOnboardStatus(sessionId);
+      res.status(200).json(status);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   };
 

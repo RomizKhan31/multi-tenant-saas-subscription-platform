@@ -1,50 +1,67 @@
 import { Payment } from '../models';
 import { IPayment } from '../types';
-import { Types } from 'mongoose';
+import { Types, ClientSession } from 'mongoose';
 
 export class PaymentRepository {
-  async findById(paymentId: Types.ObjectId): Promise<IPayment | null> {
-    return Payment.findById(paymentId).lean();
+  async findById(paymentId: Types.ObjectId, session?: ClientSession): Promise<IPayment | null> {
+    const query = Payment.findById(paymentId);
+    if (session) query.session(session);
+    return query.lean();
   }
 
-  async findByOrganizationId(organizationId: Types.ObjectId, skip = 0, limit = 50): Promise<IPayment[]> {
-    return Payment.find({ organizationId })
+  async findByOrganizationId(
+    organizationId: Types.ObjectId,
+    skip = 0,
+    limit = 50,
+    session?: ClientSession
+  ): Promise<IPayment[]> {
+    const query = Payment.find({ organizationId })
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 })
-      .lean();
+      .sort({ createdAt: -1 });
+    if (session) query.session(session);
+    return query.lean();
   }
 
-  async findByStripePaymentIntentId(stripePaymentIntentId: string): Promise<IPayment | null> {
-    return Payment.findOne({ stripePaymentIntentId }).lean();
+  async findByStripePaymentIntentId(stripePaymentIntentId: string, session?: ClientSession): Promise<IPayment | null> {
+    const query = Payment.findOne({ stripePaymentIntentId });
+    if (session) query.session(session);
+    return query.lean();
   }
 
-  async findByStripeCheckoutSessionId(stripeCheckoutSessionId: string): Promise<IPayment | null> {
-    return Payment.findOne({ stripeCheckoutSessionId }).lean();
+  async findByStripeCheckoutSessionId(stripeCheckoutSessionId: string, session?: ClientSession): Promise<IPayment | null> {
+    const query = Payment.findOne({ stripeCheckoutSessionId });
+    if (session) query.session(session);
+    return query.lean();
   }
 
-  async create(paymentData: Partial<IPayment>): Promise<IPayment> {
+  async create(paymentData: Partial<IPayment>, session?: ClientSession): Promise<IPayment> {
     const payment = new Payment(paymentData);
-    return payment.save();
+    return payment.save({ session });
   }
 
-  async update(paymentId: Types.ObjectId, updateData: Partial<IPayment>): Promise<IPayment | null> {
-    return Payment.findByIdAndUpdate(paymentId, updateData, { new: true }).lean();
+  async update(
+    paymentId: Types.ObjectId,
+    updateData: Partial<IPayment>,
+    session?: ClientSession
+  ): Promise<IPayment | null> {
+    return Payment.findByIdAndUpdate(paymentId, updateData, { new: true, session }).lean();
   }
 
-  async findAll(filters: any = {}, skip = 0, limit = 50): Promise<IPayment[]> {
-    return Payment.find(filters)
+  async findAll(filters: any = {}, skip = 0, limit = 50, session?: ClientSession): Promise<IPayment[]> {
+    const query = Payment.find(filters)
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 })
-      .lean();
+      .sort({ createdAt: -1 });
+    if (session) query.session(session);
+    return query.lean();
   }
 
   async count(filters: any = {}): Promise<number> {
     return Payment.countDocuments(filters);
   }
 
-  async delete(paymentId: Types.ObjectId): Promise<IPayment | null> {
-    return Payment.findByIdAndDelete(paymentId).lean();
+  async delete(paymentId: Types.ObjectId, session?: ClientSession): Promise<IPayment | null> {
+    return Payment.findByIdAndDelete(paymentId, { session }).lean();
   }
 }

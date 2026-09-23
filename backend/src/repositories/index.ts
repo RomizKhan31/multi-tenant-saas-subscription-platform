@@ -7,3 +7,5 @@ export { TransactionRepository } from './TransactionRepository';
 export { InvitationRepository } from './InvitationRepository';
 export { PasswordResetTokenRepository } from './PasswordResetTokenRepository';
 export { WebhookEventRepository } from './WebhookEventRepository';
+export { PendingRegistrationRepository } from './PendingRegistrationRepository';
+

@@ -86,6 +86,21 @@ export interface ISubscription {
   currentPeriodStart?: Date;
   currentPeriodEnd?: Date;
   cancelAtPeriodEnd?: boolean;
+  expiryReminderSent?: boolean;
+  expiryReminderSentAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IPendingRegistration {
+  _id: Types.ObjectId;
+  organizationName: string;
+  adminName: string;
+  email: string;
+  passwordHash: string;
+  planId: Types.ObjectId;
+  stripeCheckoutSessionId?: string;
+  status: 'PENDING' | 'COMPLETED' | 'EXPIRED';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -156,3 +171,4 @@ export interface IAuthRequest extends Request {
   query: any;
   params: any;
 }
+

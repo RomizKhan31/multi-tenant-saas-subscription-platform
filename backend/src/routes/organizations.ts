@@ -10,6 +10,7 @@ export const createOrganizationRoutes = (organizationController: OrganizationCon
   router.get('/', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), organizationController.getOrganizations);
   router.get('/current', requireAuth, requireRole([UserRole.ORGANIZATION_ADMIN, UserRole.ORGANIZATION_MEMBER]), organizationController.getCurrentOrganization);
   router.get('/:id', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), organizationController.getOrganization);
+  router.get('/:id/details', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), organizationController.getOrganizationDetails);
   router.get('/:id/members', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), organizationController.getOrganizationMembers);
   router.post('/:id/suspend', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), organizationController.suspendOrganization);
   router.post('/:id/reactivate', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), organizationController.reactivateOrganization);

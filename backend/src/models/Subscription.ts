@@ -37,6 +37,13 @@ const SubscriptionSchema = new Schema<ISubscription>(
       type: Boolean,
       default: false,
     },
+    expiryReminderSent: {
+      type: Boolean,
+      default: false,
+    },
+    expiryReminderSentAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

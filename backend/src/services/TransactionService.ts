@@ -27,9 +27,10 @@ export class TransactionService {
   async getTransactionsByOrganizationId(
     organizationId: Types.ObjectId,
     skip = 0,
-    limit = 50
+    limit = 50,
+    status?: string
   ): Promise<ITransaction[]> {
-    return this.transactionRepository.findByOrganizationId(organizationId, skip, limit);
+    return this.transactionRepository.findByOrganizationId(organizationId, skip, limit, undefined, status);
   }
 
   async updateTransaction(
@@ -62,24 +63,31 @@ export class TransactionService {
     try {
       session.startTransaction();
 
-      // Update payment status
-      const payment = await this.paymentRepository.update(paymentId, {
-        status: 'SUCCESS' as any,
-      });
+      // Update payment status with session
+      const payment = await this.paymentRepository.update(
+        paymentId,
+        {
+          status: 'SUCCESS' as any,
+        },
+        session
+      );
 
       if (!payment) {
         throw new Error('Payment not found');
       }
 
-      // Create transaction
-      const transaction = await this.transactionRepository.create({
-        organizationId,
-        paymentId,
-        amount,
-        currency,
-        description,
-        status: TransactionStatus.SUCCESS,
-      });
+      // Create transaction with session
+      const transaction = await this.transactionRepository.create(
+        {
+          organizationId,
+          paymentId,
+          amount,
+          currency,
+          description,
+          status: TransactionStatus.SUCCESS,
+        },
+        session
+      );
 
       await session.commitTransaction();
 

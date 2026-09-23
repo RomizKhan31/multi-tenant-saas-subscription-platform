@@ -35,11 +35,11 @@ export const requireAuth = async (req: IAuthRequest, res: Response, next: NextFu
 
     next();
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
     if (error instanceof jwt.TokenExpiredError) {
       return res.status(401).json({ error: 'Token expired' });
+    }
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ error: 'Invalid token' });
     }
     console.error('Auth middleware error:', error);
     return res.status(500).json({ error: 'Authentication error' });

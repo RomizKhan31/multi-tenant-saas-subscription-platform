@@ -7,7 +7,7 @@ export class WebhookController {
   handleStripeWebhook = async (req: Request, res: Response): Promise<void> => {
     try {
       const signature = req.headers['stripe-signature'] as string;
-      const rawBody = req.body;
+      const rawBody = (req as any).rawBody || req.body;
 
       if (!signature) {
         res.status(400).json({ error: 'Missing Stripe signature' });

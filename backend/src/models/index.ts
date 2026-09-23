@@ -7,3 +7,4 @@ export { Transaction } from './Transaction';
 export { Invitation } from './Invitation';
 export { PasswordResetToken } from './PasswordResetToken';
 export { WebhookEvent } from './WebhookEvent';
+export { PendingRegistration } from './PendingRegistration';

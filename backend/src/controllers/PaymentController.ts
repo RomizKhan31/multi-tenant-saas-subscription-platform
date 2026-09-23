@@ -117,4 +117,22 @@ export class PaymentController {
       res.status(500).json({ error: error.message });
     }
   };
+
+  getInvoice = async (req: IAuthRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const organizationId = req.user?.role === 'PLATFORM_ADMIN' ? undefined : req.user?.organizationId;
+      const invoice = await this.paymentService.getInvoiceData(id as any, organizationId);
+      res.status(200).json(invoice);
+    } catch (error: any) {
+      if (error.message.includes('Unauthorized')) {
+        res.status(403).json({ error: error.message });
+      } else if (error.message.includes('not found')) {
+        res.status(404).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  };
 }
+

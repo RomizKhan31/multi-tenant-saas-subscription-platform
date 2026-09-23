@@ -163,4 +163,14 @@ export class SubscriptionController {
       res.status(500).json({ error: error.message });
     }
   };
+
+  checkExpiringSubscriptions = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      const sentCount = await this.subscriptionService.checkExpiringSubscriptions();
+      res.status(200).json({ message: 'Expiring subscription check completed', remindersSent: sentCount });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
 }
+

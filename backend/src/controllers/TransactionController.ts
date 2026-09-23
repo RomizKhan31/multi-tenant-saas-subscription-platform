@@ -32,8 +32,13 @@ export class TransactionController {
       }
 
       const [transactions, total] = await Promise.all([
-        this.transactionService.getTransactionsByOrganizationId(organizationId, skip, parseInt(limit as string)),
-        this.transactionService.countTransactions({ organizationId, status }),
+        this.transactionService.getTransactionsByOrganizationId(
+          organizationId,
+          skip,
+          parseInt(limit as string),
+          status as string
+        ),
+        this.transactionService.countTransactions({ organizationId, ...(status ? { status } : {}) }),
       ]);
 
       res.status(200).json({
@@ -52,7 +57,7 @@ export class TransactionController {
 
   getAllTransactions = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { status, organizationId, page = '1', limit = '50' } = req.query;
+      const { status, organizationId, startDate, endDate, page = '1', limit = '50' } = req.query;
       const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
       
       const filters: any = {};
@@ -61,6 +66,15 @@ export class TransactionController {
       }
       if (organizationId) {
         filters.organizationId = organizationId;
+      }
+      if (startDate || endDate) {
+        filters.createdAt = {};
+        if (startDate) filters.createdAt.$gte = new Date(startDate as string);
+        if (endDate) {
+          const end = new Date(endDate as string);
+          end.setHours(23, 59, 59, 999);
+          filters.createdAt.$lte = end;
+        }
       }
 
       const [transactions, total] = await Promise.all([

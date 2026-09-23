@@ -46,6 +46,21 @@ export class OrganizationController {
     }
   };
 
+  getOrganizationDetails = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const details = await this.organizationService.getOrganizationDetails(id as any);
+      if (!details) {
+        res.status(404).json({ error: 'Organization not found' });
+        return;
+      }
+      res.status(200).json(details);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+
   updateOrganization = async (req: IAuthRequest, res: Response): Promise<void> => {
     try {
       const validatedData = updateOrganizationSchema.parse(req.body);

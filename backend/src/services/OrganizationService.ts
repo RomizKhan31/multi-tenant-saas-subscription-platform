@@ -1,12 +1,20 @@
-import { OrganizationRepository } from '../repositories';
-import { UserRepository } from '../repositories';
+import {
+  OrganizationRepository,
+  UserRepository,
+  SubscriptionRepository,
+  PaymentRepository,
+  TransactionRepository,
+} from '../repositories';
 import { IOrganization, OrganizationStatus } from '../types';
 import { Types } from 'mongoose';
 
 export class OrganizationService {
   constructor(
     private organizationRepository: OrganizationRepository,
-    private userRepository: UserRepository
+    private userRepository: UserRepository,
+    private subscriptionRepository?: SubscriptionRepository,
+    private paymentRepository?: PaymentRepository,
+    private transactionRepository?: TransactionRepository
   ) {}
 
   async createOrganization(organizationData: {
@@ -19,6 +27,45 @@ export class OrganizationService {
 
   async getOrganizationById(organizationId: Types.ObjectId): Promise<IOrganization | null> {
     return this.organizationRepository.findById(organizationId);
+  }
+
+  async getOrganizationDetails(organizationId: Types.ObjectId): Promise<{
+    organization: IOrganization;
+    members: any[];
+    subscriptions: any[];
+    payments: any[];
+    transactions: any[];
+  } | null> {
+    const organization = await this.organizationRepository.findById(organizationId);
+    if (!organization) {
+      return null;
+    }
+
+    const members = await this.userRepository.findByOrganizationId(organizationId);
+    const sanitizedMembers = members.map((m: any) => {
+      const { password, ...rest } = m;
+      return rest;
+    });
+
+    const subscriptions = this.subscriptionRepository
+      ? await this.subscriptionRepository.findAll({ organizationId })
+      : [];
+
+    const payments = this.paymentRepository
+      ? await this.paymentRepository.findByOrganizationId(organizationId)
+      : [];
+
+    const transactions = this.transactionRepository
+      ? await this.transactionRepository.findByOrganizationId(organizationId)
+      : [];
+
+    return {
+      organization,
+      members: sanitizedMembers,
+      subscriptions,
+      payments,
+      transactions,
+    };
   }
 
   async updateOrganization(

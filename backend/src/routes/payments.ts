@@ -11,9 +11,13 @@ export const createPaymentRoutes = (paymentController: PaymentController): Route
   router.post('/checkout', requireAuth, requireOrganizationAccess, requireRole([UserRole.ORGANIZATION_ADMIN]), paymentRateLimiter, paymentController.createCheckoutSession);
   router.get('/', requireAuth, requireOrganizationAccess, requireRole([UserRole.ORGANIZATION_ADMIN]), paymentController.getPayments);
 
+  // Organization admin & Platform admin invoice download
+  router.get('/:id/invoice', requireAuth, paymentController.getInvoice);
+
   // Platform admin
   router.get('/all', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), paymentController.getAllPayments);
   router.get('/:id', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), paymentController.getPayment);
 
   return router;
 };
+

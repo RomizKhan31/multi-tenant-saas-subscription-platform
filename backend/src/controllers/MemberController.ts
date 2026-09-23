@@ -80,7 +80,13 @@ export class MemberController {
       await this.memberService.removeMember(organizationId, userId as any);
       res.status(200).json({ message: 'Member removed successfully' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      if (error.message === 'User is not a member of this organization') {
+        res.status(403).json({ error: error.message });
+      } else if (error.message === 'User not found') {
+        res.status(404).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   };
 
@@ -100,6 +106,10 @@ export class MemberController {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: 'Validation error', details: error.errors });
+      } else if (error.message === 'User is not a member of this organization') {
+        res.status(403).json({ error: error.message });
+      } else if (error.message === 'User not found') {
+        res.status(404).json({ error: error.message });
       } else {
         res.status(500).json({ error: error.message });
       }
