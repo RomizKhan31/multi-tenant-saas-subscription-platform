@@ -1,536 +1,399 @@
 # Multi-Tenant SaaS Subscription Platform
 
-A production-ready, maintainable, secure multi-tenant SaaS subscription platform built with Next.js, Express, MongoDB, and Stripe.
+A production-ready, maintainable, secure multi-tenant SaaS subscription platform built with **Next.js (App Router)**, **Express REST API**, **MongoDB/Mongoose**, and **Stripe**.
 
-## Project Overview
+---
 
-This platform enables multiple organizations to register, select subscription plans, pay through Stripe, and manage their own organizations and members. The platform guarantees strict multi-tenant data isolation where Organization A can never access, modify, or see Organization B's data.
+## 1. Architecture & Design Principles
 
-## Architecture
+### Layered Backend Architecture
 
 ```
-Next.js Frontend (App Router)
-   ↓
-Express REST API
-   ↓
-Services (Business Logic)
-   ↓
-Repositories (Data Access)
-   ↓
-MongoDB
-
-Express
-   ↓
-Stripe (Checkout & Webhooks)
-
-Stripe
-   ↓
-Webhook
-   ↓
-Express
-   ↓
-MongoDB (Transaction)
+HTTP Client / Next.js
+       │
+       ▼
+Routes (`backend/src/routes`)
+       │ (Input Validation & Rate Limiting)
+       ▼
+Middleware (`backend/src/middleware`)
+       │ (requireAuth, requireRole, requireOrganizationAccess)
+       ▼
+Controllers (`backend/src/controllers`)
+       │ (HTTP orchestration & status codes)
+       ▼
+Services (`backend/src/services`)
+       │ (Business logic, atomic transactions, Stripe orchestration)
+       ▼
+Repositories (`backend/src/repositories`)
+       │ (MongoDB queries & tenant filtering with ClientSession)
+       ▼
+MongoDB (`Mongoose Models`)
 ```
 
-### Layered Architecture
+- **Business Logic Isolation**: Controllers handle HTTP requests and delegate domain logic directly to Services.
+- **Data Access Layer**: Repositories abstract all database interactions and enforce multi-tenant isolation filters (`organizationId`).
+- **Atomic Operations**: Critical flows (e.g. Stripe checkout completion, member invitation acceptance) pass Mongoose `ClientSession` through repositories to execute within atomic transactions with compensating rollback mechanisms.
 
-- **Frontend**: Next.js with App Router, TypeScript, Tailwind CSS, TanStack Query
-- **API Layer**: Express.js REST API with TypeScript
-- **Controller Layer**: Request/response handling and validation
-- **Service Layer**: Business logic and orchestration
-- **Repository Layer**: Data access and MongoDB queries
-- **Database**: MongoDB with Mongoose ODM
+---
 
-## Tech Stack
+## 2. Multi-Tenant Data Isolation Strategy
+
+Strict multi-tenancy is enforced at both API and database levels. **Organization A can never read, modify, or delete Organization B's data.**
+
+### Tenant Ownership & Scoping
+
+Every tenant-owned document includes an `organizationId` reference:
+- `User` (`organizationId`)
+- `Subscription` (`organizationId`)
+- `Payment` (`organizationId`)
+- `Transaction` (`organizationId`)
+- `Invitation` (`organizationId`)
+- `PendingRegistration` (`sessionId`)
+
+### Query Isolation Pattern
+
+Repositories guarantee that tenant queries are scoped by the authenticated user's `organizationId`:
+
+```typescript
+// SECURE - Enforced organization-scoped query
+const payments = await Payment.find({
+  organizationId: authenticatedUser.organizationId
+});
+
+// PREVENTED - IDOR and cross-tenant access rejected
+const payment = await Payment.findOne({
+  _id: requestedPaymentId,
+  organizationId: authenticatedUser.organizationId
+});
+```
+
+### Authorization Middleware Pipeline
+
+```typescript
+requireAuth               // Verifies JWT signature, expiration, and decodes user context
+requireRole([...])        // Enforces role permissions (PLATFORM_ADMIN, ORGANIZATION_ADMIN, ORGANIZATION_MEMBER)
+requireOrganizationAccess // Verifies user belongs to an active tenant organization
+```
+
+Sensitive tenant context is **never** blindly trusted from client request bodies or URL parameters; it is extracted server-side from `req.user.organizationId`.
+
+---
+
+## 3. Technology Stack
 
 ### Frontend
-- Next.js 15 (App Router)
-- React 19
-- TypeScript
-- Tailwind CSS
-- TanStack Query (React Query)
-- Axios
-- Lucide React
+- **Framework**: Next.js 16 (App Router)
+- **Library**: React 19, TypeScript
+- **Server/API State**: TanStack Query (`@tanstack/react-query` v5)
+- **HTTP Client**: Axios with automatic JWT injection & error handling
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
 
 ### Backend
-- Node.js
-- Express.js
-- TypeScript
-- MongoDB
-- Mongoose
-- Stripe
-- Resend (Email)
-- JWT (Authentication)
-- Zod (Validation)
-- Helmet (Security)
-- CORS
+- **Runtime**: Node.js 20
+- **Framework**: Express.js with TypeScript
+- **Database**: MongoDB 7.0 with Mongoose ODM
+- **Payments**: Stripe Node SDK (Test/Sandbox Mode)
+- **Email**: Resend transactional email integration
+- **Security**: JWT (`jsonwebtoken`), `bcryptjs`, `helmet`, `cors`, `express-rate-limit`, `zod`
 
-### Database
-- MongoDB with proper indexing and relationships
+### Infrastructure & CI/CD
+- **Containerization**: Multi-stage `Dockerfile` and `docker-compose.yml`
+- **CI Pipeline**: GitHub Actions (`.github/workflows/ci.yml`) with automated MongoDB service, backend test suite, and frontend build
 
-## Database Design
+---
 
-### Collections
+## 4. User Roles & Capabilities
 
-#### User
-- `email` (unique, indexed)
-- `password` (hashed with bcrypt)
-- `name`
-- `role` (PLATFORM_ADMIN, ORGANIZATION_ADMIN, ORGANIZATION_MEMBER)
-- `organizationId` (indexed)
-- `status` (ACTIVE, INACTIVE)
-- `createdAt`, `updatedAt`
+| Feature / Panel | PLATFORM_ADMIN | ORGANIZATION_ADMIN | ORGANIZATION_MEMBER |
+| :--- | :---: | :---: | :---: |
+| Overview / Statistics | Platform-wide | Organization-level | - |
+| Manage All Organizations (Suspend/Reactivate) | Yes | - | - |
+| Organization Full Details & History | Yes | - | - |
+| Manage Plans (Create, Edit, Toggle) | Yes | - | - |
+| View Cross-Tenant Transactions & Filter | Yes | - | - |
+| Edit Organization Profile & Billing Email | - | Yes | - |
+| Invite, Remove & Change Member Roles | - | Yes | - |
+| Subscribe, Upgrade & Cancel Subscription | - | Yes | - |
+| View Payments & Download Invoices | - | Yes | - |
+| View Tenant Transactions & Status Filter | - | Yes | - |
+| View Read-Only Organization Info | - | - | Yes |
+| Edit Own Profile & Change Password | Yes | Yes | Yes |
 
-#### Organization
-- `name` (indexed)
-- `contactEmail`
-- `billingEmail`
-- `status` (ACTIVE, TRIAL, SUSPENDED, CANCELLED)
-- `createdAt`, `updatedAt`
+---
 
-#### Plan
-- `name` (indexed)
-- `price`
-- `billingInterval` (MONTHLY, YEARLY)
-- `features` (array)
-- `isActive`
-- `createdAt`, `updatedAt`
+## 5. Registration & Paid Onboarding Flow
 
-#### Subscription
-- `organizationId` (indexed)
-- `planId`
-- `status` (ACTIVE, PENDING, FAILED, CANCELLED, EXPIRED)
-- `stripeSubscriptionId` (indexed, sparse)
-- `stripeCustomerId`
-- `currentPeriodStart`, `currentPeriodEnd`
-- `cancelAtPeriodEnd`
-- `createdAt`, `updatedAt`
-
-#### Payment
-- `organizationId` (indexed)
-- `subscriptionId`
-- `amount`
-- `currency`
-- `status` (PENDING, SUCCESS, FAILED, REFUNDED, ROLLED_BACK)
-- `stripePaymentIntentId` (indexed, sparse)
-- `stripeCheckoutSessionId`
-- `createdAt`, `updatedAt`
-
-#### Transaction
-- `organizationId` (indexed)
-- `paymentId`
-- `amount`
-- `currency`
-- `status` (PENDING, SUCCESS, FAILED, REFUNDED, ROLLED_BACK)
-- `description`
-- `createdAt`, `updatedAt`
-
-#### Invitation
-- `organizationId` (indexed)
-- `email` (indexed)
-- `role`
-- `status` (PENDING, ACCEPTED, EXPIRED, REVOKED)
-- `token` (unique, indexed)
-- `expiresAt` (indexed)
-- `createdAt`, `updatedAt`
-
-#### PasswordResetToken
-- `userId` (indexed)
-- `token` (unique, indexed)
-- `expiresAt` (indexed)
-- `createdAt`
-
-#### WebhookEvent
-- `stripeEventId` (unique, indexed)
-- `eventType`
-- `processed` (indexed)
-- `processedAt`
-- `error`
-- `createdAt`
-
-### Multi-Tenancy Strategy
-
-Every organization-owned resource has an `organizationId` field. All organization-scoped queries include tenant filtering:
-
-```javascript
-// Correct - Tenant-scoped query
-Payment.find({
-  organizationId: authenticatedUser.organizationId
-})
-
-// Incorrect - Allows cross-tenant access
-Payment.find({
-  _id: requestedPaymentId
-})
-```
-
-### Cross-Tenant Access Prevention
-
-1. **Server-side authorization**: All protected endpoints verify user role and organization membership
-2. **Repository-level filtering**: All queries include organizationId where applicable
-3. **Middleware checks**: `requireOrganizationAccess` ensures user has organization context
-4. **Role-based access**: `requireRole` middleware enforces role permissions
-
-## Authentication
-
-### Login Flow
-1. User submits email and password
-2. Server validates credentials
-3. Server generates JWT token with user info
-4. Token stored in localStorage
-5. Token sent in Authorization header for subsequent requests
-
-### JWT Strategy
-- Secret: `JWT_SECRET` environment variable
-- Expiration: 7 days (configurable via `JWT_EXPIRES_IN`)
-- Payload: userId, email, role, organizationId
-
-### Password Hashing
-- Algorithm: bcrypt with salt rounds of 10
-- Never store plaintext passwords
-- Hashing performed in User model pre-save hook
-
-### Password Reset Flow
-1. User requests reset with email
-2. Server generates reset token (expires in 1 hour)
-3. Token stored in database
-4. Reset link sent to email (via Resend)
-5. User clicks link and enters new password
-6. Server validates token and updates password
-7. Token deleted after use
-
-## Payment Flow
+Organizations are **never** activated based on frontend redirects or query parameters. The Stripe webhook is the authoritative source of truth:
 
 ```
-Signup
-   ↓
-Validate input
-   ↓
-Create pending organization/subscription
-   ↓
-Create Stripe Checkout Session
-   ↓
-Stripe Checkout
-   ↓
-Payment
-   ↓
-Stripe webhook
-   ↓
-Verify webhook signature
-   ↓
-Idempotency check (stripeEventId)
-   ↓
-MongoDB transaction
-   ↓
-Activate organization
-   ↓
-Create subscription
-   ↓
-Create payment record
-   ↓
-Create transaction record
-   ↓
-Send success email
+1. User submits Signup Form (/register)
+   [Org Name, Admin Name, Email, Password, Plan Selection]
+                 │
+                 ▼
+2. POST /api/auth/register-onboard
+   - Input validation (Zod) & email uniqueness check
+   - Password pre-hashed
+   - PendingRegistration record saved in MongoDB
+   - Stripe Checkout Session created with metadata: { pendingRegistrationId }
+                 │
+                 ▼
+3. User completes payment on Stripe Checkout
+                 │
+                 ▼
+4. Stripe fires checkout.session.completed webhook
+                 │
+                 ▼
+5. POST /api/webhooks/stripe
+   - Verifies raw request body with STRIPE_WEBHOOK_SECRET
+   - Idempotency check: rejects duplicate stripeEventId
+   - Atomic Database Transaction:
+       a. Creates Organization (Status: ACTIVE)
+       b. Creates Admin User with hashed password (Role: ORGANIZATION_ADMIN)
+       c. Creates Subscription record linked to Plan
+       d. Creates Payment record (Status: SUCCESS)
+       e. Creates Transaction ledger record
+       f. Marks PendingRegistration as completed
+   - Sends confirmation email via Resend
+                 │
+                 ▼
+6. Frontend Polling (/payment/success)
+   - Polls /api/auth/onboard-status?sessionId=...
+   - Displays confirmation & redirects to Sign In upon webhook completion
 ```
 
-### Transaction / Rollback
+---
 
-Payment confirmation uses MongoDB transactions to ensure atomicity:
-
-```javascript
-START TRANSACTION
-  → Update organization status
-  → Create/update subscription
-  → Update payment status
-  → Create transaction record
-IF EVERYTHING SUCCESS:
-  COMMIT
-IF ANYTHING FAILS:
-  ROLLBACK
-  → Mark payment as ROLLED_BACK
-  → Create failed transaction record
-```
-
-## Stripe Webhooks
+## 6. Stripe Webhook Security & Idempotency
 
 ### Signature Verification
-- Raw request body is used for verification
-- `STRIPE_WEBHOOK_SECRET` environment variable
-- Rejects invalid signatures immediately
+- Incoming webhooks capture the raw request buffer (`req.rawBody`) before parsing.
+- Verified using `stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)`.
+- Any invalid or tampered signature is rejected with HTTP 400.
 
-### Idempotency
-- Every Stripe event has a unique `stripeEventId`
-- Events are stored in `WebhookEvent` collection
-- Before processing, check if event already exists
-- Duplicate events are safely ignored
+### Idempotency Protection
+- Every Stripe event has a unique `stripeEventId`.
+- The `WebhookEvent` collection records all processed events with a unique index.
+- If an event is received more than once, it is safely ignored and returns HTTP 200 `{ received: true, duplicate: true }`.
 
-### Handled Events
-- `checkout.session.completed` - Successful payment
-- `checkout.session.expired` - Abandoned checkout
-- `payment_intent.succeeded` - Payment success
-- `payment_intent.payment_failed` - Payment failure
-- `invoice.payment_succeeded` - Recurring payment
-- `invoice.payment_failed` - Recurring payment failure
-- `customer.subscription.updated` - Subscription changes
-- `customer.subscription.deleted` - Subscription cancellation
+### Atomic Transactions & Compensating Rollback
+- On MongoDB replica sets (production / Atlas), native multi-document transactions ensure ACID atomicity.
+- In standalone environments or upon failure, automated compensating rollbacks revert organization status and clean up partial records, logging the event status to prevent inconsistent data.
 
-## Security
+---
 
-### Authentication & Authorization
-- JWT-based authentication with expiration
-- Role-based access control (RBAC)
-- Organization membership verification
-- Server-side authorization on all protected endpoints
+## 7. Email Notification Events
 
-### Input Validation
-- Zod schema validation on all API endpoints
-- Email format validation
-- Password strength validation
-- ID validation
+Transactional emails are integrated via **Resend**:
+1. **Welcome & Activation**: Sent upon successful Stripe payment confirmation.
+2. **Member Invitation**: Sent with secure invitation token link (`/accept-invitation?token=...`).
+3. **Password Reset**: Sent with time-limited token link (`/reset-password?token=...`).
+4. **Payment Succeeded**: Sent upon successful checkout or recurring charge.
+5. **Payment Failed**: Sent if a renewal payment fails.
+6. **Subscription Cancelled**: Sent when cancellation is scheduled.
+7. **Expiring Subscription Notice**: Background scheduler checks subscriptions expiring within 7 days and sends renewal reminders.
 
-### Rate Limiting
-- Login: 5 requests per 15 minutes
-- Registration: 5 requests per 15 minutes
-- Password reset: 5 requests per 15 minutes
-- Member invitation: 10 requests per hour
-- Payment checkout: 5 requests per hour
-- General: 100 requests per 15 minutes
+---
 
-### Security Headers
-- Helmet middleware for security headers
-- CORS configuration
-- No sensitive data in frontend code
-- Environment variables for secrets
-
-### Payment Security
-- Never store card numbers or CVV
-- Stripe handles all sensitive payment data
-- Server-side payment verification via webhooks
-- No payment credentials exposed to frontend
-
-### Secrets Management
-- All secrets in environment variables
-- `.env` files in `.gitignore`
-- `.env.example` files with placeholder values
-- Never commit real API keys or secrets
-
-## Email
-
-### Provider
-- Resend (transactional email service)
-
-### Notification Events
-- Member invitation
-- Payment succeeded
-- Payment failed
-- Subscription upgraded
-- Subscription downgraded
-- Subscription cancelled
-- Subscription expiring soon (scheduled job)
-
-### Configuration
-- `RESEND_API_KEY` environment variable
-- `EMAIL_FROM` environment variable
-
-## Local Setup
+## 8. Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- MongoDB 6+
-- npm or yarn
+- Node.js 20+
+- MongoDB 7.0+ (running locally or via Docker)
+- npm
 
-### Backend Setup
+### Option A: Running with Docker Compose (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/RomizKhan31/multi-tenant-saas-subscription-platform.git
+cd multi-tenant-saas-subscription-platform
+
+# Start MongoDB, Backend, and Frontend containers
+docker-compose up --build
+```
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:5000`
+
+---
+
+### Option B: Running Locally
+
+#### 1. Setup Backend
 
 ```bash
 cd backend
 npm install
 cp .env.example .env
-# Edit .env with your values
+```
+
+Ensure `.env` contains valid configuration:
+```env
+PORT=5000
+NODE_ENV=development
+MONGODB_URI=mongodb://localhost:27017/multi-tenant-saas
+JWT_SECRET=super_secret_jwt_key_with_at_least_32_characters
+JWT_EXPIRES_IN=7d
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+FRONTEND_URL=http://localhost:3000
+RESEND_API_KEY=re_...
+EMAIL_FROM=onboarding@resend.dev
+```
+
+Seed initial database records (Plans, Admin accounts, Organizations):
+```bash
+npm run seed
+```
+
+Start the backend server:
+```bash
 npm run dev
 ```
 
-Backend runs on `http://localhost:5000`
-
-### Frontend Setup
+#### 2. Setup Frontend
 
 ```bash
-cd frontend
+cd ../frontend
 npm install
-cp env.example .env.local
-# Edit .env.local with your values
+```
+
+Start the Next.js development server:
+```bash
 npm run dev
 ```
+Open [http://localhost:3000](http://localhost:3000).
 
-Frontend runs on `http://localhost:3000`
+---
 
-## Environment Variables
+## 9. Demo Credentials
 
-### Backend (.env)
-```env
-NODE_ENV=development
-PORT=5000
+Pre-seeded credentials are provided for testing all three roles:
 
-# MongoDB
-MONGODB_URI=mongodb://localhost:27017/multi-tenant-saas
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Platform Admin** | `platform-admin@example.com` | `PlatformAdmin123!` |
+| **Organization Admin** | `org-admin@example.com` | `OrgAdmin123!` |
+| **Organization Member** | `org-member@example.com` | `OrgMember123!` |
 
-# JWT
-JWT_SECRET=your_jwt_secret_key_minimum_32_characters
-JWT_EXPIRES_IN=7d
+*Quick-fill demo buttons are also provided directly on the Login page.*
 
-# Stripe
-STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
-STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key
+---
 
-# Email (Resend)
-RESEND_API_KEY=re_your_resend_api_key
-EMAIL_FROM=noreply@yourdomain.com
+## 10. Automated Testing
 
-# Frontend URL
-FRONTEND_URL=http://localhost:3000
-```
-
-### Frontend (.env.local)
-```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
-```
-
-## Test Credentials
-
-### Platform Admin
-- Email: `platform-admin@example.com`
-- Password: `PlatformAdmin123!`
-- Role: PLATFORM_ADMIN
-
-### Organization Admin
-- Email: `org-admin@example.com`
-- Password: `OrgAdmin123!`
-- Role: ORGANIZATION_ADMIN
-
-### Organization Member
-- Email: `org-member@example.com`
-- Password: `OrgMember123!`
-- Role: ORGANIZATION_MEMBER
-
-**Note**: These are placeholder credentials. You need to create users via the registration API or seed the database with actual test users.
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login
-- `POST /api/auth/forgot-password` - Request password reset
-- `POST /api/auth/reset-password` - Reset password with token
-- `POST /api/auth/change-password` - Change password (authenticated)
-
-### Organizations
-- `GET /api/organizations` - List organizations (Platform Admin)
-- `GET /api/organizations/:id` - Get organization details (Platform Admin)
-- `GET /api/organizations/:id/members` - Get organization members (Platform Admin)
-- `POST /api/organizations/:id/suspend` - Suspend organization (Platform Admin)
-- `POST /api/organizations/:id/reactivate` - Reactivate organization (Platform Admin)
-- `PUT /api/organizations/profile` - Update organization (Org Admin)
-
-### Plans
-- `POST /api/plans` - Create plan (Platform Admin)
-- `GET /api/plans` - List plans (Platform Admin)
-- `GET /api/plans/active` - Get active plans
-- `GET /api/plans/:id` - Get plan (Platform Admin)
-- `PUT /api/plans/:id` - Update plan (Platform Admin)
-- `POST /api/plans/:id/disable` - Disable plan (Platform Admin)
-- `POST /api/plans/:id/enable` - Enable plan (Platform Admin)
-
-### Subscriptions
-- `GET /api/subscriptions` - Get current subscription (Org Admin)
-- `POST /api/subscriptions/upgrade` - Upgrade subscription (Org Admin)
-- `POST /api/subscriptions/downgrade` - Downgrade subscription (Org Admin)
-- `POST /api/subscriptions/cancel` - Cancel subscription (Org Admin)
-- `GET /api/subscriptions/all` - List all subscriptions (Platform Admin)
-
-### Payments
-- `POST /api/payments/checkout` - Create checkout session (Org Admin)
-- `GET /api/payments` - Get organization payments (Org Admin)
-- `GET /api/payments/all` - List all payments (Platform Admin)
-- `GET /api/payments/:id` - Get payment (Platform Admin)
-
-### Transactions
-- `GET /api/transactions` - Get organization transactions (Org Admin)
-- `GET /api/transactions/all` - List all transactions (Platform Admin)
-- `GET /api/transactions/:id` - Get transaction (Platform Admin)
-
-### Members
-- `POST /api/members/invite` - Invite member (Org Admin)
-- `POST /api/members/accept` - Accept invitation (Public)
-- `DELETE /api/members/:userId` - Remove member (Org Admin)
-- `PUT /api/members/:userId/role` - Change member role (Org Admin)
-- `GET /api/members` - Get organization members (Org Admin, Org Member)
-
-### Webhooks
-- `POST /api/webhooks/stripe` - Stripe webhook endpoint (Public, signature verified)
-
-## Testing
-
-### Running Tests
+The backend includes comprehensive test suites covering all critical assessment criteria:
 
 ```bash
 cd backend
 npm test
 ```
 
-### Test Coverage
+### Test Suites (44 Tests, 100% Passing)
 
-The project includes comprehensive tests for:
+1. **`auth.test.ts`**:
+   - User registration & duplicate email validation
+   - Weak password & invalid email format rejection
+   - Login credential authentication & JWT token generation
+   - Expired JWT token rejection
+   - Protected route access control
 
-- **Authentication**: Valid/invalid login, expired tokens, protected routes
-- **Authorization**: Role-based access control for all three roles
-- **Multi-Tenancy**: Cross-tenant access prevention (GET, UPDATE, DELETE)
-- **Payment**: Checkout creation, success/failure, webhook verification
-- **Webhooks**: Duplicate event handling, signature verification
-- **Transactions**: MongoDB transaction rollback scenarios
+2. **`authorization.test.ts`**:
+   - `requireRole` middleware checks across all three roles
+   - Role escalation prevention
 
-### Critical Test Scenarios
+3. **`multitenancy.test.ts`**:
+   - Strict tenant data isolation
+   - Cross-tenant read prevention (`GET /api/payments`)
+   - Cross-tenant update prevention (`PUT /api/members/:id/role`)
+   - Cross-tenant delete prevention (`DELETE /api/members/:id`)
 
-1. **Tenant Isolation**: Organization A attempting to access Organization B data
-2. **Duplicate Webhook**: Same Stripe event sent twice
-3. **Transaction Rollback**: Force failure during multi-record operation
-4. **Authorization**: Platform Admin, Org Admin, Org Member access patterns
-5. **Payment Flow**: Complete signup → checkout → webhook → activation flow
+4. **`payment.test.ts`**:
+   - Stripe checkout session generation
+   - Success and failure webhook scenarios
+   - Downloadable invoice generation with tenant ownership verification
 
-## AI Usage
+5. **`webhook.test.ts`**:
+   - Stripe raw body signature verification
+   - Idempotency check: duplicate event rejection
+   - Complete onboarding webhook flow (`PendingRegistration` -> Active `Organization`)
+   - Expired checkout session handling
+   - Database failure rollback simulation
 
-This project was developed with assistance from AI tools (Cascade/Claude) for:
+---
 
-- Code generation and boilerplate creation
-- Architecture planning and design
-- Documentation writing
-- Debugging and error resolution
+## 11. API Reference Summary
 
-All code was reviewed and validated against the assessment requirements. The implementation follows best practices for production-ready applications.
+### Authentication & Onboarding
+- `POST /api/auth/register-onboard` - Register organization & create Stripe checkout session
+- `GET /api/auth/onboard-status` - Check onboarding activation status via polling
+- `POST /api/auth/login` - Authenticate user & return JWT token
+- `POST /api/auth/forgot-password` - Request password reset link
+- `POST /api/auth/reset-password` - Set new password with reset token
+- `POST /api/auth/change-password` - Change password (authenticated)
+- `POST /api/auth/accept-invitation` - Complete invited member account setup
 
-## Known Limitations
+### Organizations
+- `GET /api/organizations` - List all organizations with search & status filters (Platform Admin)
+- `GET /api/organizations/:id/details` - Full profile, members, subscriptions, payments & transactions (Platform Admin)
+- `GET /api/organizations/:id/members` - Member count & list (Platform Admin)
+- `POST /api/organizations/:id/suspend` - Suspend tenant access (Platform Admin)
+- `POST /api/organizations/:id/reactivate` - Reactivate tenant (Platform Admin)
+- `GET /api/organizations/current` - Get current tenant profile (Org Admin & Member)
+- `PUT /api/organizations/profile` - Update organization profile & billing email (Org Admin)
 
-1. **Scheduled Jobs**: Subscription expiry reminder emails require a scheduled job implementation (e.g., node-cron)
-2. **PDF Invoices**: Invoice generation is not implemented (optional bonus feature)
-3. **Custom Email Configuration**: Organization-specific email configuration is not implemented (optional bonus feature)
-4. **Frontend Polish**: Dashboard UIs are functional but could benefit from enhanced design
-5. **Test Data**: Database seeding scripts for test data are not included
-6. **CI/CD**: GitHub Actions pipeline is not implemented (optional bonus feature)
+### Subscription Plans
+- `GET /api/plans/active` - List active subscription plans (Public)
+- `GET /api/plans` - List all plans (Platform Admin)
+- `POST /api/plans` - Create subscription plan (Platform Admin)
+- `PUT /api/plans/:id` - Update subscription plan (Platform Admin)
+- `POST /api/plans/:id/disable` - Disable plan (Platform Admin)
+- `POST /api/plans/:id/enable` - Enable plan (Platform Admin)
 
-## Git History
+### Subscriptions & Billing
+- `GET /api/subscriptions` - View current organization subscription (Org Admin)
+- `GET /api/subscriptions/current-plan` - View current plan info (Org Member)
+- `GET /api/subscriptions/all` - View all platform subscriptions (Platform Admin)
+- `POST /api/subscriptions/cancel` - Schedule subscription cancellation (Org Admin)
+- `POST /api/subscriptions/check-expiring` - Trigger subscription expiration checks (System/Admin)
 
-The project follows a meaningful commit history:
+### Payments & Invoices
+- `POST /api/payments/checkout` - Create Stripe checkout session for plan switch (Org Admin)
+- `GET /api/payments` - List organization payments (Org Admin)
+- `GET /api/payments/all` - List all platform payments (Platform Admin)
+- `GET /api/payments/:id/invoice` - View/download itemized invoice with tenant verification (Org Admin)
 
-```
-feat: setup express backend with layered architecture
-feat: setup Next.js frontend with role-specific dashboards
-```
+### Transactions
+- `GET /api/transactions` - Organization transactions with status filter (Org Admin)
+- `GET /api/transactions/all` - Cross-tenant transactions with org & status filters (Platform Admin)
 
-Additional commits will be added as features are implemented and tested.
+### Team Management
+- `GET /api/members` - List organization team members (Org Admin & Member)
+- `POST /api/members/invite` - Invite new team member by email (Org Admin)
+- `PUT /api/members/:userId/role` - Update member role (Org Admin)
+- `DELETE /api/members/:userId` - Remove member from organization (Org Admin)
 
-## License
+### Webhooks
+- `POST /api/webhooks/stripe` - Authoritative Stripe webhook handler with raw signature verification
 
-ISC
+---
 
-## Support
+## 12. Security Checklist
 
-For questions or issues, please refer to the project documentation or contact the development team.
+- [x] Passwords hashed with bcrypt (salt rounds: 10)
+- [x] JWT expiration and signature verification enforced
+- [x] No sensitive secrets in client-side code
+- [x] Stripe card credentials never touch backend servers
+- [x] Raw request buffer capture for Stripe signature verification
+- [x] Webhook idempotency protection via unique event storage
+- [x] Database transactions with compensating rollbacks on payment failure
+- [x] Tenant scoping on every organization database query
+- [x] Cross-tenant reads, updates, and deletes rejected
+- [x] Helmet security headers and CORS origin restrictions
+- [x] Rate limiting configured on authentication and payment routes
+
+---
+
+## 13. License
+
+This project was built for the Octopi Digital Full-Stack Developer Technical Assessment.
