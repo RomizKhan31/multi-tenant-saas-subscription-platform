@@ -1,0 +1,148 @@
+import { Request, Response } from 'express';
+import { OrganizationService } from '../services';
+import { z } from 'zod';
+import { IAuthRequest } from '../types';
+
+const createOrganizationSchema = z.object({
+  name: z.string().min(1),
+  contactEmail: z.string().email(),
+  billingEmail: z.string().email(),
+});
+
+const updateOrganizationSchema = z.object({
+  name: z.string().min(1).optional(),
+  contactEmail: z.string().email().optional(),
+  billingEmail: z.string().email().optional(),
+});
+
+export class OrganizationController {
+  constructor(private organizationService: OrganizationService) {}
+
+  createOrganization = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const validatedData = createOrganizationSchema.parse(req.body);
+      const organization = await this.organizationService.createOrganization(validatedData);
+      res.status(201).json(organization);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Validation error', details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  };
+
+  getOrganization = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const organization = await this.organizationService.getOrganizationById(id as any);
+      if (!organization) {
+        res.status(404).json({ error: 'Organization not found' });
+        return;
+      }
+      res.status(200).json(organization);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  updateOrganization = async (req: IAuthRequest, res: Response): Promise<void> => {
+    try {
+      const validatedData = updateOrganizationSchema.parse(req.body);
+      const organizationId = req.user?.organizationId;
+      
+      if (!organizationId) {
+        res.status(403).json({ error: 'No organization associated with user' });
+        return;
+      }
+
+      const organization = await this.organizationService.updateOrganization(
+        organizationId,
+        validatedData
+      );
+      
+      if (!organization) {
+        res.status(404).json({ error: 'Organization not found' });
+        return;
+      }
+      
+      res.status(200).json(organization);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Validation error', details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  };
+
+  suspendOrganization = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const organization = await this.organizationService.suspendOrganization(id as any);
+      if (!organization) {
+        res.status(404).json({ error: 'Organization not found' });
+        return;
+      }
+      res.status(200).json(organization);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  reactivateOrganization = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const organization = await this.organizationService.reactivateOrganization(id as any);
+      if (!organization) {
+        res.status(404).json({ error: 'Organization not found' });
+        return;
+      }
+      res.status(200).json(organization);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  getOrganizations = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { search, status, page = '1', limit = '50' } = req.query;
+      const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+      
+      const filters: any = {};
+      if (search) {
+        filters.name = { $regex: search as string, $options: 'i' };
+      }
+      if (status) {
+        filters.status = status;
+      }
+
+      const [organizations, total] = await Promise.all([
+        this.organizationService.getOrganizations(filters, skip, parseInt(limit as string)),
+        this.organizationService.countOrganizations(filters),
+      ]);
+
+      res.status(200).json({
+        organizations,
+        pagination: {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+          total,
+          pages: Math.ceil(total / parseInt(limit as string)),
+        },
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  getOrganizationMembers = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const members = await this.organizationService.getOrganizationMembers(id as any);
+      res.status(200).json({ members, count: members.length });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+}

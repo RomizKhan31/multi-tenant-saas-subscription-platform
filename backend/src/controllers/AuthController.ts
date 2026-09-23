@@ -1,0 +1,106 @@
+import { Request, Response } from 'express';
+import { AuthService } from '../services';
+import { z } from 'zod';
+import { UserRole } from '../types';
+
+const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  name: z.string().min(1),
+  role: z.nativeEnum(UserRole).optional(),
+  organizationId: z.string().optional(),
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string(),
+  newPassword: z.string().min(8),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+
+export class AuthController {
+  constructor(private authService: AuthService) {}
+
+  register = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const validatedData = registerSchema.parse(req.body);
+      const result = await this.authService.register(validatedData);
+      res.status(201).json(result);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Validation error', details: error.errors });
+      } else {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  };
+
+  login = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const validatedData = loginSchema.parse(req.body);
+      const result = await this.authService.login(validatedData.email, validatedData.password);
+      res.status(200).json(result);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Validation error', details: error.errors });
+      } else {
+        res.status(401).json({ error: error.message });
+      }
+    }
+  };
+
+  forgotPassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const validatedData = forgotPasswordSchema.parse(req.body);
+      await this.authService.forgotPassword(validatedData.email);
+      res.status(200).json({ message: 'If the email exists, a reset link has been sent' });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Validation error', details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  };
+
+  resetPassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const validatedData = resetPasswordSchema.parse(req.body);
+      await this.authService.resetPassword(validatedData.token, validatedData.newPassword);
+      res.status(200).json({ message: 'Password reset successful' });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Validation error', details: error.errors });
+      } else {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  };
+
+  changePassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const validatedData = changePasswordSchema.parse(req.body);
+      const userId = (req as any).user.userId;
+      await this.authService.changePassword(userId, validatedData.currentPassword, validatedData.newPassword);
+      res.status(200).json({ message: 'Password changed successfully' });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Validation error', details: error.errors });
+      } else {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  };
+}
