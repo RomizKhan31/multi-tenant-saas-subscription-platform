@@ -12,14 +12,15 @@ import {
   Receipt,
   History,
   Download,
-  AlertTriangle,
 } from 'lucide-react';
+import axios from 'axios';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import {
   QueryState,
   StatusBadge,
   InvoiceModal,
+  type InvoiceRecord,
   formatCurrency,
   formatDate,
 } from '@/components/dashboard-ui';
@@ -49,7 +50,7 @@ export default function PlatformAdminOrganizationsPage() {
   // Invoice state
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
-  const [invoiceData, setInvoiceData] = useState<any | null>(null);
+  const [invoiceData, setInvoiceData] = useState<InvoiceRecord | null>(null);
 
   const organizations = useQuery({
     queryKey: ['organizations-list', search, status],
@@ -106,10 +107,14 @@ export default function PlatformAdminOrganizationsPage() {
         queryClient.invalidateQueries({ queryKey: ['organization-details', selectedOrgId] });
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : 'Organization status update failed.';
       setNotice({
         type: 'error',
-        message: error?.response?.data?.error || 'Organization status update failed.',
+        message,
       });
     },
   });
@@ -119,10 +124,15 @@ export default function PlatformAdminOrganizationsPage() {
     setInvoiceLoading(true);
     setInvoiceData(null);
     try {
-      const res = await api.get<any>(`/payments/${paymentId}/invoice`);
-      setInvoiceData(res.data?.invoice || res.data);
-    } catch (err: any) {
-      setNotice({ type: 'error', message: err?.response?.data?.error || 'Failed to fetch invoice.' });
+      const res = await api.get<{ invoice?: InvoiceRecord }>(`/payments/${paymentId}/invoice`);
+      const data = res.data?.invoice || (res.data as unknown as InvoiceRecord);
+      setInvoiceData(data);
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && err.response?.data?.error
+          ? err.response.data.error
+          : 'Failed to fetch invoice.';
+      setNotice({ type: 'error', message });
       setSelectedInvoiceId(null);
     } finally {
       setInvoiceLoading(false);

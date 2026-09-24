@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Plus, Edit2, Check, X } from 'lucide-react';
+import axios from 'axios';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import {
@@ -73,10 +74,16 @@ export default function PlatformAdminPlansPage() {
       });
       queryClient.invalidateQueries({ queryKey: ['plans-list'] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : error instanceof Error
+            ? error.message
+            : 'Failed to save plan.';
       setNotice({
         type: 'error',
-        message: error?.response?.data?.error || error?.message || 'Failed to save plan.',
+        message,
       });
     },
   });
@@ -91,10 +98,14 @@ export default function PlatformAdminPlansPage() {
       });
       queryClient.invalidateQueries({ queryKey: ['plans-list'] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : 'Failed to toggle plan status.';
       setNotice({
         type: 'error',
-        message: error?.response?.data?.error || 'Failed to toggle plan status.',
+        message,
       });
     },
   });

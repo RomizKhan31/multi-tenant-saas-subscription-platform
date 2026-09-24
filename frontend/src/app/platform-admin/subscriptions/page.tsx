@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Layers, Building2, Calendar, CheckCircle2 } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import {

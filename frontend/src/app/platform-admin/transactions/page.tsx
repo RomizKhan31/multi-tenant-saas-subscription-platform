@@ -2,14 +2,13 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ReceiptText, Download, Eye } from 'lucide-react';
+import { ReceiptText, Eye } from 'lucide-react';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import {
   QueryState,
   StatusBadge,
   InvoiceModal,
-  downloadInvoiceHtml,
   type InvoiceRecord,
   formatCurrency,
   formatDate,
@@ -32,7 +31,7 @@ export default function PlatformAdminTransactionsPage() {
   // Invoice modal state
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
-  const [invoiceData, setInvoiceData] = useState<any | null>(null);
+  const [invoiceData, setInvoiceData] = useState<InvoiceRecord | null>(null);
 
   const organizations = useQuery({
     queryKey: ['organizations-names'],
@@ -58,8 +57,9 @@ export default function PlatformAdminTransactionsPage() {
     setInvoiceLoading(true);
     setInvoiceData(null);
     try {
-      const res = await api.get<any>(`/payments/${paymentId}/invoice`);
-      setInvoiceData(res.data?.invoice || res.data);
+      const res = await api.get<{ invoice?: InvoiceRecord }>(`/payments/${paymentId}/invoice`);
+      const data = res.data?.invoice || (res.data as unknown as InvoiceRecord);
+      setInvoiceData(data);
     } catch {
       setSelectedInvoiceId(null);
     } finally {

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, TrendingUp, DollarSign, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, CheckCircle2 } from 'lucide-react';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import {
