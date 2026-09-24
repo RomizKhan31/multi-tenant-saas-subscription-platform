@@ -5,6 +5,7 @@ import { OrganizationRepository } from '../repositories';
 import { IPayment, PaymentStatus, SubscriptionStatus } from '../types';
 import { Types } from 'mongoose';
 import { stripe } from '../config/stripe';
+import { Payment, Transaction } from '../models';
 
 export class PaymentService {
   constructor(
@@ -127,7 +128,64 @@ export class PaymentService {
   }
 
   async getInvoiceData(paymentId: Types.ObjectId, organizationId?: Types.ObjectId): Promise<any> {
-    const payment = await this.paymentRepository.findById(paymentId);
+    let payment: any = null;
+    let transaction: any = null;
+
+    if (Types.ObjectId.isValid(paymentId as any)) {
+      payment = await this.paymentRepository.findById(paymentId);
+      if (!payment) {
+        transaction = await Transaction.findById(paymentId);
+        if (transaction?.paymentId) {
+          payment = await this.paymentRepository.findById(transaction.paymentId as any);
+        }
+      }
+    } else {
+      payment = await Payment.findOne({
+        $or: [
+          { stripePaymentIntentId: paymentId as any },
+          { stripeCheckoutSessionId: paymentId as any },
+        ],
+      } as any);
+    }
+
+    if (!payment && transaction) {
+      if (organizationId && transaction.organizationId.toString() !== organizationId.toString()) {
+        throw new Error('Unauthorized access to payment invoice');
+      }
+      const organization = this.organizationRepository
+        ? await this.organizationRepository.findById(transaction.organizationId)
+        : null;
+      return {
+        invoiceNumber: `INV-${transaction._id.toString().slice(-8).toUpperCase()}`,
+        paymentId: transaction._id,
+        organizationId: transaction.organizationId,
+        organization: {
+          id: transaction.organizationId,
+          name: organization?.name || 'Organization',
+          billingEmail: organization?.billingEmail || organization?.contactEmail || '',
+          contactEmail: organization?.contactEmail || '',
+        },
+        date: transaction.createdAt,
+        dueDate: transaction.createdAt,
+        amount: transaction.amount,
+        currency: transaction.currency.toUpperCase(),
+        status: transaction.status,
+        planName: transaction.description || 'Subscription Payment',
+        billingInterval: 'MONTHLY',
+        lineItems: [
+          {
+            description: transaction.description || 'Subscription Payment',
+            amount: transaction.amount,
+            quantity: 1,
+            unitPrice: transaction.amount,
+          },
+        ],
+        subtotal: transaction.amount,
+        tax: 0,
+        total: transaction.amount,
+      };
+    }
+
     if (!payment) {
       throw new Error('Payment not found');
     }
