@@ -2,10 +2,18 @@ import { Request, Response } from 'express';
 import { PaymentService } from '../services';
 import { z } from 'zod';
 import { IAuthRequest } from '../types';
+import { Types } from 'mongoose';
 
 const createCheckoutSchema = z.object({
-  planId: z.string(),
+  planId: z.string().min(1, 'Plan ID is required'),
 });
+
+const parseObjectId = (id: string | string[] | undefined): Types.ObjectId | null => {
+  if (typeof id === 'string' && Types.ObjectId.isValid(id)) {
+    return new Types.ObjectId(id);
+  }
+  return null;
+};
 
 export class PaymentController {
   constructor(private paymentService: PaymentService) {}
@@ -13,6 +21,11 @@ export class PaymentController {
   createCheckoutSession = async (req: IAuthRequest, res: Response): Promise<void> => {
     try {
       const validatedData = createCheckoutSchema.parse(req.body);
+      if (!Types.ObjectId.isValid(validatedData.planId)) {
+        res.status(400).json({ error: 'Invalid plan ID format' });
+        return;
+      }
+
       const organizationId = req.user?.organizationId;
       const userEmail = req.user?.email;
       
@@ -23,7 +36,7 @@ export class PaymentController {
 
       const result = await this.paymentService.createCheckoutSession(
         organizationId,
-        validatedData.planId as any,
+        new Types.ObjectId(validatedData.planId),
         userEmail
       );
       
@@ -43,8 +56,13 @@ export class PaymentController {
 
   getPayment = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const payment = await this.paymentService.getPaymentById(id as any);
+      const paymentId = parseObjectId(req.params.id);
+      if (!paymentId) {
+        res.status(400).json({ error: 'Invalid payment ID format' });
+        return;
+      }
+
+      const payment = await this.paymentService.getPaymentById(paymentId);
       if (!payment) {
         res.status(404).json({ error: 'Payment not found' });
         return;
@@ -67,9 +85,19 @@ export class PaymentController {
         return;
       }
 
+      const statusFilter = typeof status === 'string' && status.trim() !== '' ? status.trim() : undefined;
+
       const [payments, total] = await Promise.all([
-        this.paymentService.getPaymentsByOrganizationId(organizationId, skip, parseInt(limit as string)),
-        this.paymentService.countPayments({ organizationId, status }),
+        this.paymentService.getPaymentsByOrganizationId(
+          organizationId,
+          skip,
+          parseInt(limit as string),
+          statusFilter
+        ),
+        this.paymentService.countPayments({
+          organizationId,
+          ...(statusFilter ? { status: statusFilter } : {}),
+        }),
       ]);
 
       res.status(200).json({
@@ -96,7 +124,12 @@ export class PaymentController {
         filters.status = status;
       }
       if (organizationId) {
-        filters.organizationId = organizationId;
+        if (typeof organizationId === 'string' && Types.ObjectId.isValid(organizationId)) {
+          filters.organizationId = new Types.ObjectId(organizationId);
+        } else {
+          res.status(400).json({ error: 'Invalid organizationId format' });
+          return;
+        }
       }
 
       const [payments, total] = await Promise.all([
@@ -121,6 +154,11 @@ export class PaymentController {
   getInvoice = async (req: IAuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      if (!id || typeof id !== 'string') {
+        res.status(400).json({ error: 'Invoice or payment ID is required' });
+        return;
+      }
+
       const isPlatformAdmin = req.user?.role === 'PLATFORM_ADMIN';
       const organizationId = isPlatformAdmin ? undefined : req.user?.organizationId;
 
@@ -145,4 +183,3 @@ export class PaymentController {
     }
   };
 }
-

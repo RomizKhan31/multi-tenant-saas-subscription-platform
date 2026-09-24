@@ -112,6 +112,8 @@ describe('Multi-Tenancy Tests', () => {
         .set('Authorization', `Bearer ${orgBToken}`)
         .send({ name: 'Hacked Name' });
 
+      expect(response.status).toBe(200);
+
       // Should only update Organization B, not Organization A
       const orgA = await Organization.findById(orgAId);
       expect(orgA?.name).toBe('Organization A');

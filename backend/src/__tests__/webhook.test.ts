@@ -115,7 +115,7 @@ describe('Webhook Tests', () => {
         status: OrganizationStatus.TRIAL,
       });
 
-      const adminUser = await User.create({
+      await User.create({
         name: 'Idempotent Admin',
         email: 'admin@idempotent.com',
         password: 'HashedPassword123!',

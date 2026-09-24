@@ -7,8 +7,6 @@ import { BillingInterval, UserRole, PaymentStatus, SubscriptionStatus } from '..
 describe('Payment & Invoice Tests', () => {
   let orgAdminToken: string;
   let otherOrgToken: string;
-  let orgAId: string;
-  let orgBId: string;
   let testPlan: any;
   let testPayment: any;
 
@@ -40,16 +38,14 @@ describe('Payment & Invoice Tests', () => {
       contactEmail: 'admin@alpha.com',
       billingEmail: 'billing@alpha.com',
     });
-    orgAId = orgA._id.toString();
 
     const orgB = await Organization.create({
       name: 'Beta Corp',
       contactEmail: 'admin@beta.com',
       billingEmail: 'billing@beta.com',
     });
-    orgBId = orgB._id.toString();
 
-    const userA = await User.create({
+    await User.create({
       email: 'admin@alpha.com',
       password: 'Password123!',
       name: 'Alpha Admin',
@@ -57,7 +53,7 @@ describe('Payment & Invoice Tests', () => {
       organizationId: orgA._id,
     });
 
-    const userB = await User.create({
+    await User.create({
       email: 'admin@beta.com',
       password: 'Password123!',
       name: 'Beta Admin',
@@ -215,6 +211,59 @@ describe('Payment & Invoice Tests', () => {
 
       expect(response.status).toBe(403);
       expect(response.body.error).toContain('Unauthorized');
+    });
+  });
+
+  describe('GET /api/payments status filter', () => {
+    it('should filter payments by status correctly', async () => {
+      // Create another payment with FAILED status for orgA
+      const failedPayment = await Payment.create({
+        organizationId: testPayment.organizationId,
+        subscriptionId: testPayment.subscriptionId,
+        amount: 49.0,
+        currency: 'usd',
+        status: PaymentStatus.FAILED,
+      });
+
+      // Filter by SUCCESS
+      const successRes = await request(app)
+        .get('/api/payments?status=SUCCESS')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(successRes.status).toBe(200);
+      expect(successRes.body.payments).toBeDefined();
+      expect(successRes.body.payments.every((p: any) => p.status === 'SUCCESS')).toBe(true);
+      expect(successRes.body.payments.some((p: any) => p._id.toString() === testPayment._id.toString())).toBe(true);
+      expect(successRes.body.payments.some((p: any) => p._id.toString() === failedPayment._id.toString())).toBe(false);
+
+      // Filter by FAILED
+      const failedRes = await request(app)
+        .get('/api/payments?status=FAILED')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(failedRes.status).toBe(200);
+      expect(failedRes.body.payments).toBeDefined();
+      expect(failedRes.body.payments.every((p: any) => p.status === 'FAILED')).toBe(true);
+      expect(failedRes.body.payments.some((p: any) => p._id.toString() === failedPayment._id.toString())).toBe(true);
+      expect(failedRes.body.payments.some((p: any) => p._id.toString() === testPayment._id.toString())).toBe(false);
+
+      // Filter by PENDING (none exist)
+      const pendingRes = await request(app)
+        .get('/api/payments?status=PENDING')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(pendingRes.status).toBe(200);
+      expect(pendingRes.body.payments.length).toBe(0);
+      expect(pendingRes.body.pagination.total).toBe(0);
+
+      // No status filter (returns both)
+      const allRes = await request(app)
+        .get('/api/payments')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(allRes.status).toBe(200);
+      expect(allRes.body.payments.some((p: any) => p._id.toString() === testPayment._id.toString())).toBe(true);
+      expect(allRes.body.payments.some((p: any) => p._id.toString() === failedPayment._id.toString())).toBe(true);
     });
   });
 });

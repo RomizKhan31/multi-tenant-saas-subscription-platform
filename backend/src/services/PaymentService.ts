@@ -104,9 +104,10 @@ export class PaymentService {
   async getPaymentsByOrganizationId(
     organizationId: Types.ObjectId,
     skip = 0,
-    limit = 50
+    limit = 50,
+    status?: string
   ): Promise<IPayment[]> {
-    return this.paymentRepository.findByOrganizationId(organizationId, skip, limit);
+    return this.paymentRepository.findByOrganizationId(organizationId, skip, limit, undefined, status);
   }
 
   async updatePayment(

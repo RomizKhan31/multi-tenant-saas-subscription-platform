@@ -13,9 +13,14 @@ export class PaymentRepository {
     organizationId: Types.ObjectId,
     skip = 0,
     limit = 50,
-    session?: ClientSession
+    session?: ClientSession,
+    status?: string
   ): Promise<IPayment[]> {
-    const query = Payment.find({ organizationId })
+    const filter: any = { organizationId };
+    if (status) {
+      filter.status = status;
+    }
+    const query = Payment.find(filter)
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });

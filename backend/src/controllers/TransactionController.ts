@@ -1,14 +1,27 @@
 import { Request, Response } from 'express';
 import { TransactionService } from '../services';
 import { IAuthRequest } from '../types';
+import { Types } from 'mongoose';
+
+const parseObjectId = (id: string | string[] | undefined): Types.ObjectId | null => {
+  if (typeof id === 'string' && Types.ObjectId.isValid(id)) {
+    return new Types.ObjectId(id);
+  }
+  return null;
+};
 
 export class TransactionController {
   constructor(private transactionService: TransactionService) {}
 
   getTransaction = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const transaction = await this.transactionService.getTransactionById(id as any);
+      const txId = parseObjectId(req.params.id);
+      if (!txId) {
+        res.status(400).json({ error: 'Invalid transaction ID format' });
+        return;
+      }
+
+      const transaction = await this.transactionService.getTransactionById(txId);
       if (!transaction) {
         res.status(404).json({ error: 'Transaction not found' });
         return;
@@ -31,14 +44,16 @@ export class TransactionController {
         return;
       }
 
+      const statusFilter = typeof status === 'string' && status.trim() !== '' ? status.trim() : undefined;
+
       const [transactions, total] = await Promise.all([
         this.transactionService.getTransactionsByOrganizationId(
           organizationId,
           skip,
           parseInt(limit as string),
-          status as string
+          statusFilter
         ),
-        this.transactionService.countTransactions({ organizationId, ...(status ? { status } : {}) }),
+        this.transactionService.countTransactions({ organizationId, ...(statusFilter ? { status: statusFilter } : {}) }),
       ]);
 
       res.status(200).json({
@@ -65,7 +80,12 @@ export class TransactionController {
         filters.status = status;
       }
       if (organizationId) {
-        filters.organizationId = organizationId;
+        if (typeof organizationId === 'string' && Types.ObjectId.isValid(organizationId)) {
+          filters.organizationId = new Types.ObjectId(organizationId);
+        } else {
+          res.status(400).json({ error: 'Invalid organizationId format' });
+          return;
+        }
       }
       if (startDate || endDate) {
         filters.createdAt = {};

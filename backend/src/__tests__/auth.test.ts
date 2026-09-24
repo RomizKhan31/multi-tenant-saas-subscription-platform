@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../server';
 import { User } from '../models';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 
 describe('Authentication Tests', () => {
   beforeAll(async () => {
@@ -181,7 +182,6 @@ describe('Authentication Tests', () => {
     });
 
     it('should fail to access protected route with expired token', async () => {
-      const jwt = require('jsonwebtoken');
       const expiredToken = jwt.sign(
         {
           userId: new mongoose.Types.ObjectId().toString(),
