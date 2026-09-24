@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { KeyRound, Lock, ShieldCheck } from 'lucide-react';
+import axios from 'axios';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
 
@@ -16,12 +17,14 @@ export default function OrgMemberSecurityPage() {
       setPassword({ currentPassword: '', newPassword: '' });
       setNotice({ type: 'success', message: 'Your password has been changed successfully.' });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : 'Could not change password. Please check your current password.';
       setNotice({
         type: 'error',
-        message:
-          error?.response?.data?.error ||
-          'Could not change password. Please check your current password.',
+        message,
       });
     },
   });

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { User, Save } from 'lucide-react';
+import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
@@ -14,7 +15,9 @@ export default function OrgMemberProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setProfile({ name: user.name || '', email: user.email || '' });
+      queueMicrotask(() => {
+        setProfile({ name: user.name || '', email: user.email || '' });
+      });
     }
   }, [user]);
 
@@ -26,10 +29,14 @@ export default function OrgMemberProfilePage() {
         message: 'Your profile has been updated successfully. Re-login to refresh the top bar.',
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : 'Could not update profile.';
       setNotice({
         type: 'error',
-        message: error?.response?.data?.error || 'Could not update profile.',
+        message,
       });
     },
   });

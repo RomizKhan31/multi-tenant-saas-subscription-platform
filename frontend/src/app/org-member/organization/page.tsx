@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Building2, ShieldCheck, Calendar, CreditCard } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { QueryState, StatusBadge, formatDate } from '@/components/dashboard-ui';

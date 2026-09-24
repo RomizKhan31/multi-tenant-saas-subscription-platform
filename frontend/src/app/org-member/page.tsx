@@ -3,17 +3,14 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, User, KeyRound, ArrowRight, ShieldCheck } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
-import { StatCard, StatusBadge, QueryState } from '@/components/dashboard-ui';
+import { StatCard, QueryState } from '@/components/dashboard-ui';
 
 type Organization = { name: string; status: string; createdAt: string };
 type Plan = { name: string; billingInterval: string };
 
 export default function OrgMemberDashboardPage() {
-  const { user } = useAuth();
-
   const organization = useQuery({
     queryKey: ['org-member-overview-data'],
     queryFn: async () => (await api.get<Organization>('/organizations/current')).data,
