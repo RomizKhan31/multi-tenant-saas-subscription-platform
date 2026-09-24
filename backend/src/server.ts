@@ -1,7 +1,7 @@
+import 'dotenv/config';
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
 import { connectDatabase } from './config/database';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { generalRateLimiter } from './middleware/rateLimit';
@@ -17,9 +17,6 @@ import * as controllers from './controllers';
 
 // Import routes
 import * as routes from './routes';
-
-// Load environment variables
-dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
