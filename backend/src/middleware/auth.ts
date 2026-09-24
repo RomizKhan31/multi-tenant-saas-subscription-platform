@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Types } from 'mongoose';
 import { IAuthRequest, UserRole } from '../types';

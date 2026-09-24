@@ -5,7 +5,7 @@ import {
   PaymentRepository,
   TransactionRepository,
 } from '../repositories';
-import { IOrganization, OrganizationStatus } from '../types';
+import { IOrganization, IUser, OrganizationStatus } from '../types';
 import { Types } from 'mongoose';
 
 export class OrganizationService {
@@ -31,7 +31,7 @@ export class OrganizationService {
 
   async getOrganizationDetails(organizationId: Types.ObjectId): Promise<{
     organization: IOrganization;
-    members: any[];
+    members: Omit<IUser, 'password'>[];
     subscriptions: any[];
     payments: any[];
     transactions: any[];
@@ -43,7 +43,7 @@ export class OrganizationService {
 
     const members = await this.userRepository.findByOrganizationId(organizationId);
     const sanitizedMembers = members.map((m: any) => {
-      const { password, ...rest } = m;
+      const { password: _password, ...rest } = m;
       return rest;
     });
 
@@ -99,8 +99,12 @@ export class OrganizationService {
     return this.organizationRepository.count(filters);
   }
 
-  async getOrganizationMembers(organizationId: Types.ObjectId): Promise<any[]> {
-    return this.userRepository.findByOrganizationId(organizationId);
+  async getOrganizationMembers(organizationId: Types.ObjectId): Promise<Omit<IUser, 'password'>[]> {
+    const members = await this.userRepository.findByOrganizationId(organizationId);
+    return members.map((m: any) => {
+      const { password: _password, ...rest } = m;
+      return rest;
+    });
   }
 
   async getMemberCount(organizationId: Types.ObjectId): Promise<number> {

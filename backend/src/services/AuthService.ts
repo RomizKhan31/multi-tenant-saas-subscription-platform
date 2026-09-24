@@ -1,6 +1,6 @@
 import { UserRepository, PasswordResetTokenRepository, PendingRegistrationRepository, PlanRepository } from '../repositories';
 import { generateToken } from '../utils/jwt';
-import { IUser, UserRole } from '../types';
+import { IUser } from '../types';
 import { Types } from 'mongoose';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
@@ -44,7 +44,7 @@ export class AuthService {
       organizationId: user.organizationId?.toString(),
     });
 
-    const { password, ...userWithoutPassword } = user.toObject();
+    const { password: _password, ...userWithoutPassword } = user.toObject();
 
     return { user: userWithoutPassword, token };
   }
@@ -161,7 +161,7 @@ export class AuthService {
       return { status: 'NOT_FOUND' };
     }
 
-    let pendingReg = await this.pendingRegistrationRepository.findByStripeCheckoutSessionId(sessionId);
+    const pendingReg = await this.pendingRegistrationRepository.findByStripeCheckoutSessionId(sessionId);
     if (!pendingReg) {
       return { status: 'NOT_FOUND' };
     }
@@ -209,12 +209,12 @@ export class AuthService {
       }
     }
 
-    const user = await this.userRepository.update(userId as any, profile);
+    const user = await this.userRepository.update(new Types.ObjectId(userId), profile);
     if (!user) {
       throw new Error('User not found');
     }
 
-    const { password, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 
@@ -270,7 +270,7 @@ export class AuthService {
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
-    const user = await this.userRepository.findAuthById(userId as any);
+    const user = await this.userRepository.findAuthById(new Types.ObjectId(userId));
     if (!user) {
       throw new Error('User not found');
     }
