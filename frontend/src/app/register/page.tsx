@@ -126,7 +126,7 @@ export default function RegisterPage() {
                   required
                   value={organizationName}
                   onChange={(e) => setOrganizationName(e.target.value)}
-                  placeholder="Acme Inc."
+                  placeholder="IT Hub"
                   className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -140,7 +140,7 @@ export default function RegisterPage() {
                   required
                   value={adminName}
                   onChange={(e) => setAdminName(e.target.value)}
-                  placeholder="Jane Doe"
+                  placeholder="Romiz Khan"
                   className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -154,7 +154,7 @@ export default function RegisterPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="jane@acme.com"
+                  placeholder="romizkhan@ithub.com"
                   className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -201,11 +201,10 @@ export default function RegisterPage() {
                     <div
                       key={plan._id}
                       onClick={() => setSelectedPlanId(plan._id)}
-                      className={`cursor-pointer rounded-xl border p-4 transition-all relative ${
-                        isSelected
-                          ? 'border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-600/30'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
-                      }`}
+                      className={`cursor-pointer rounded-xl border p-4 transition-all relative ${isSelected
+                        ? 'border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-600/30'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                        }`}
                     >
                       {isSelected && (
                         <div className="absolute top-3 right-3 size-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs">
