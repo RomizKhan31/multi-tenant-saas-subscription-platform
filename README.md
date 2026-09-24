@@ -266,21 +266,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## 9. Demo Credentials
-
-Pre-seeded credentials are provided for testing all three roles:
-
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| **Platform Admin** | `platform-admin@example.com` | `PlatformAdmin123!` |
-| **Organization Admin** | `org-admin@example.com` | `OrgAdmin123!` |
-| **Organization Member** | `org-member@example.com` | `OrgMember123!` |
-
-*Quick-fill demo buttons are also provided directly on the Login page.*
-
----
-
-## 10. Automated Testing
+## 9. Automated Testing
 
 The backend includes comprehensive test suites covering all critical assessment criteria:
 
@@ -322,7 +308,7 @@ npm test
 
 ---
 
-## 11. API Reference Summary
+## 10. API Reference Summary
 
 ### Authentication & Onboarding
 - `POST /api/auth/register-onboard` - Register organization & create Stripe checkout session
@@ -378,7 +364,7 @@ npm test
 
 ---
 
-## 12. Security Checklist
+## 11. Security Checklist
 
 - [x] Passwords hashed with bcrypt (salt rounds: 10)
 - [x] JWT expiration and signature verification enforced
@@ -394,6 +380,6 @@ npm test
 
 ---
 
-## 13. License
+## 12. License
 
 This project was built for the Octopi Digital Full-Stack Developer Technical Assessment.

@@ -110,7 +110,7 @@ export default function PlatformAdminOverview() {
       {/* Header matching Image 2 */}
       <DashboardHeader
         title="Owner Dashboard"
-        subtitle="Platform share allocation, capital overview, and verification queue"
+        subtitle="Tenant account health, subscription activity, and verification queue"
         actions={
           <>
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs font-semibold text-slate-300">
@@ -147,16 +147,16 @@ export default function PlatformAdminOverview() {
             iconColor="emerald"
           />
           <StatCard
-            label="Total Invested / Revenue"
+            label="Platform Revenue"
             value={formatCurrency(metrics.totalRevenue)}
             detail="Active platform revenue"
             icon={<CircleDollarSign size={20} />}
             iconColor="emerald"
           />
           <StatCard
-            label="Shares Allocated / Subscriptions"
+            label="Active Subscriptions"
             value={`${metrics.activeSubs} active`}
-            detail="Total active shares & subscriptions"
+            detail="Active tenant billing subscriptions"
             icon={<Layers size={20} />}
             iconColor="teal"
           />
@@ -170,7 +170,7 @@ export default function PlatformAdminOverview() {
           <StatCard
             label="Pending Invoices"
             value={metrics.pendingInvoices}
-            detail="Awaiting owner allocation review"
+            detail="Awaiting payment review"
             icon={<Wallet size={20} />}
             iconColor="amber"
           />
@@ -183,14 +183,14 @@ export default function PlatformAdminOverview() {
           />
         </div>
 
-        {/* Plan-wise Share Allocation section matching Image 2 bottom */}
+        {/* Plan subscription activity */}
         <div className="rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm">
           <div className="flex items-center justify-between pb-5 border-b border-slate-800/80">
             <div className="flex items-center gap-2.5">
               <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/10 text-emerald-400">
                 <Layers size={18} />
               </div>
-              <h2 className="text-base font-bold text-white">Plan-wise Share Allocation</h2>
+              <h2 className="text-base font-bold text-white">Plan Subscription Activity</h2>
             </div>
             <Link
               href="/platform-admin/plans"
@@ -208,9 +208,6 @@ export default function PlatformAdminOverview() {
                   subscriptions.data?.filter(
                     (s) => s.planId === plan._id && s.status === 'ACTIVE'
                   ).length || 0;
-                const totalSubs = subscriptions.data?.length || 1;
-                const percentage = Math.min(100, Math.round((subCount / totalSubs) * 100));
-
                 return (
                   <div
                     key={plan._id}
@@ -233,17 +230,7 @@ export default function PlatformAdminOverview() {
                         <span className="text-xs font-bold text-emerald-400">
                           {subCount} active {subCount === 1 ? 'tenant' : 'tenants'}
                         </span>
-                        <p className="text-[11px] text-slate-500">
-                          {percentage}% of platform subscriptions
-                        </p>
                       </div>
-                    </div>
-
-                    <div className="mt-3 w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.max(5, percentage)}%` }}
-                      />
                     </div>
                   </div>
                 );

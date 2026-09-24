@@ -45,7 +45,7 @@ export default function PlatformAdminSubscriptionsPage() {
     <div className="space-y-6">
       <DashboardHeader
         title="Tenant Subscriptions"
-        subtitle="Cross-tenant subscription lifecycles, billing renewal dates, and plan allocations."
+        subtitle="Cross-tenant subscription lifecycles, billing renewal dates, and plan assignments."
         badge={
           <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
             {subscriptions.data?.length ?? 0} Total Records

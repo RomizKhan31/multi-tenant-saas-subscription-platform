@@ -4,21 +4,17 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
-
-  const handleQuickFill = (e: string, p: string) => {
-    setEmail(e);
-    setPassword(p);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,14 +93,25 @@ export default function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={isPasswordVisible ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 pr-10 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsPasswordVisible((visible) => !visible)}
+                  className="absolute inset-y-0 right-0 inline-flex w-10 items-center justify-center rounded-r-lg text-slate-400 transition hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500"
+                  aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
+                  title={isPasswordVisible ? 'Hide password' : 'Show password'}
+                >
+                  {isPasswordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <button
@@ -131,38 +138,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Quick login helper for evaluation */}
-          <div className="pt-2 border-t border-slate-100">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 text-center">
-              Quick Fill Demo Credentials
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('platform-admin@example.com', 'PlatformAdmin123!')}
-                className="text-xs py-1.5 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 font-medium text-slate-700 truncate"
-                title="platform-admin@example.com"
-              >
-                Platform Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('org-admin@example.com', 'OrgAdmin123!')}
-                className="text-xs py-1.5 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 font-medium text-slate-700 truncate"
-                title="org-admin@example.com"
-              >
-                Org Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('org-member@example.com', 'OrgMember123!')}
-                className="text-xs py-1.5 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 font-medium text-slate-700 truncate"
-                title="org-member@example.com"
-              >
-                Org Member
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

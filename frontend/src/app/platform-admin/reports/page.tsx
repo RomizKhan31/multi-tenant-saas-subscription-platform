@@ -49,16 +49,14 @@ export default function PlatformAdminReportsPage() {
       .filter((t) => t.status === 'SUCCESS')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const successfulTxs = txs.filter((t) => t.status === 'SUCCESS').length;
-    const totalTxs = txs.length || 1;
-    const successRate = Math.round((successfulTxs / totalTxs) * 100);
+    const successfulPayments = txs.filter((t) => t.status === 'SUCCESS').length;
 
     const activeOrgs = orgs.filter((o) => o.status === 'ACTIVE').length;
     const arpu = activeOrgs > 0 ? totalRevenue / activeOrgs : 0;
 
     return {
       totalRevenue,
-      successRate,
+      successfulPayments,
       arpu,
       totalTenants: orgs.length,
       activeSubs: subs.filter((s) => s.status === 'ACTIVE').length,
@@ -92,9 +90,9 @@ export default function PlatformAdminReportsPage() {
             iconColor="cyan"
           />
           <StatCard
-            label="Payment Success Rate"
-            value={`${analytics.successRate}%`}
-            detail="Settled vs failed attempts"
+            label="Successful Payments"
+            value={analytics.successfulPayments}
+            detail="Settled payment attempts"
             icon={<CheckCircle2 size={20} />}
             iconColor="teal"
           />
@@ -114,8 +112,8 @@ export default function PlatformAdminReportsPage() {
               <BarChart3 size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-white text-base">Plan Adoption & Revenue Distribution</h2>
-              <p className="text-xs text-slate-400">Tenant concentration by pricing tier.</p>
+              <h2 className="font-bold text-white text-base">Plan Subscription Overview</h2>
+              <p className="text-xs text-slate-400">Active tenant subscriptions by pricing tier.</p>
             </div>
           </div>
 
@@ -124,9 +122,6 @@ export default function PlatformAdminReportsPage() {
               const assigned =
                 subscriptions.data?.filter((s) => s.planId === p._id && s.status === 'ACTIVE')
                   .length || 0;
-              const total = subscriptions.data?.length || 1;
-              const pct = Math.round((assigned / total) * 100);
-
               return (
                 <div
                   key={p._id}
@@ -138,10 +133,9 @@ export default function PlatformAdminReportsPage() {
                       {formatCurrency(p.price)} · {assigned} active subscribers
                     </p>
                   </div>
-                  <div className="text-right">
-                    <span className="text-sm font-bold text-emerald-400">{pct}%</span>
-                    <p className="text-xs text-slate-500">Market share</p>
-                  </div>
+                  <span className="text-sm font-bold text-emerald-400">
+                    {assigned} active {assigned === 1 ? 'subscription' : 'subscriptions'}
+                  </span>
                 </div>
               );
             })}
