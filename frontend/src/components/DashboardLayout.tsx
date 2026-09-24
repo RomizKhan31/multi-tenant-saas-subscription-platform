@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -8,9 +8,9 @@ import {
   LogOut,
   Menu,
   X,
-  MessageCircle,
   LucideIcon,
   Layers,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -41,10 +41,21 @@ export function DashboardLayout({
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Authentication & Role Check
-  if (!loading && (!user || (requiredRole && user.role !== requiredRole))) {
-    router.replace('/login');
-    return null;
+  const isUnauthorized = !loading && (!user || Boolean(requiredRole && user.role !== requiredRole));
+
+  useEffect(() => {
+    if (isUnauthorized) {
+      router.replace('/login');
+    }
+  }, [isUnauthorized, router]);
+
+  if (loading || isUnauthorized) {
+    return (
+      <div className="min-h-screen bg-[#070b14] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="animate-spin text-emerald-400" size={32} />
+        <p className="text-xs text-slate-400">Verifying credentials...</p>
+      </div>
+    );
   }
 
   const handleLogout = () => {
@@ -214,17 +225,6 @@ export function DashboardLayout({
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 xl:p-10 relative">
         <div className="mx-auto max-w-7xl">{children}</div>
-
-        {/* Floating Support/Help Badge (matching Image 2 bottom-right icon) */}
-        <div className="fixed bottom-6 right-6 z-20">
-          <a
-            href="mailto:support@octopi.digital"
-            title="Need help? Contact support"
-            className="grid size-12 place-items-center rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-xl shadow-emerald-500/30 transition hover:scale-105 active:scale-95"
-          >
-            <MessageCircle size={22} className="fill-slate-950 stroke-emerald-500" />
-          </a>
-        </div>
       </main>
     </div>
   );
