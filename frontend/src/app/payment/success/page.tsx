@@ -12,7 +12,9 @@ function PaymentSuccessContent() {
   const sessionId = searchParams.get('session_id');
   const { user } = useAuth();
 
-  const [status, setStatus] = useState<'polling' | 'active' | 'failed'>('polling');
+  const [status, setStatus] = useState<'polling' | 'active' | 'failed'>(
+    sessionId ? 'polling' : 'active'
+  );
   const [errorMessage, setErrorMessage] = useState('');
   const [details, setDetails] = useState<{
     organizationName?: string;
@@ -23,11 +25,9 @@ function PaymentSuccessContent() {
 
   useEffect(() => {
     if (!sessionId) {
-      setStatus('active');
       return;
     }
 
-    let intervalId: NodeJS.Timeout;
     let attempts = 0;
     const maxAttempts = 30; // 30 * 2s = 60 seconds
 
@@ -59,7 +59,7 @@ function PaymentSuccessContent() {
             setErrorMessage('Payment confirmation is taking longer than expected. If your card was charged, please refresh this page in a moment.');
           }
         }
-      } catch (err: any) {
+      } catch {
         if (attempts >= maxAttempts) {
           clearInterval(intervalId);
           setStatus('failed');
@@ -70,7 +70,7 @@ function PaymentSuccessContent() {
 
     // First check immediately
     checkStatus();
-    intervalId = setInterval(checkStatus, 2000);
+    const intervalId = setInterval(checkStatus, 2000);
 
     return () => clearInterval(intervalId);
   }, [sessionId]);

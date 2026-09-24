@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Check, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
+import axios from 'axios';
 import api from '@/lib/api';
 import { formatCurrency } from '@/components/dashboard-ui';
 
@@ -24,11 +25,6 @@ export default function RegisterPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Fetch available active plans
   const { data: plansData, isLoading: plansLoading } = useQuery<{ plans: Plan[] }>({
@@ -39,15 +35,8 @@ export default function RegisterPage() {
     },
   });
 
-  const plans = plansData?.plans || [];
+  const plans = useMemo(() => plansData?.plans || [], [plansData]);
   const effectivePlanId = selectedPlanId || (plans.length > 0 ? plans[0]._id : '');
-
-  // Keep selectedPlanId in sync via effect rather than during render
-  useEffect(() => {
-    if (plans.length > 0 && !selectedPlanId) {
-      setSelectedPlanId(plans[0]._id);
-    }
-  }, [plans, selectedPlanId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,12 +70,14 @@ export default function RegisterPage() {
         setError('Checkout session could not be initialized. Please try again.');
         setLoading(false);
       }
-    } catch (err: any) {
-      const errorData = err.response?.data;
-      let message = errorData?.error || err.message || 'Registration failed';
+    } catch (err: unknown) {
+      const errorData = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: string; details?: Array<{ message?: string }> })
+        : undefined;
+      let message = errorData?.error || (err instanceof Error ? err.message : 'Registration failed');
       if (errorData?.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
         const detailMsg = errorData.details
-          .map((d: any) => d.message)
+          .map((d) => d.message)
           .filter(Boolean)
           .join('. ');
         if (detailMsg) {
@@ -98,7 +89,7 @@ export default function RegisterPage() {
     }
   };
 
-  const isSubmitDisabled = !mounted || loading || plansLoading || !effectivePlanId;
+  const isSubmitDisabled = loading || plansLoading || !effectivePlanId;
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -194,7 +185,7 @@ export default function RegisterPage() {
               </span>
             </div>
 
-            {!mounted || plansLoading ? (
+            {plansLoading ? (
               <div className="flex items-center justify-center p-8 text-slate-500 text-sm">
                 <Loader2 className="animate-spin mr-2" size={18} /> Loading available plans...
               </div>

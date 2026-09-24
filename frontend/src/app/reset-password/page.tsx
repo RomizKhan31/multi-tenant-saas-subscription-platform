@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { KeyRound, CheckCircle2, Loader2, ArrowRight, AlertCircle } from 'lucide-react';
+import axios from 'axios';
 import api from '@/lib/api';
 
 function ResetPasswordContent() {
@@ -43,8 +44,12 @@ function ResetPasswordContent() {
         newPassword,
       });
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Password reset failed. The token may be expired or invalid.');
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && err.response?.data?.error
+          ? (err.response.data.error as string)
+          : 'Password reset failed. The token may be expired or invalid.';
+      setError(message);
     } finally {
       setLoading(false);
     }

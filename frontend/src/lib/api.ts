@@ -36,7 +36,7 @@ api.interceptors.response.use(
       if (hadToken) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        window.location.replace('/login');
       }
     }
     return Promise.reject(error);

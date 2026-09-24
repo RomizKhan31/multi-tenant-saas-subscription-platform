@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { UserCheck, CheckCircle2, Loader2, ArrowRight, AlertCircle } from 'lucide-react';
+import axios from 'axios';
 import api from '@/lib/api';
 
 function AcceptInvitationContent() {
@@ -45,11 +46,13 @@ function AcceptInvitationContent() {
         password,
       });
       setSuccess(true);
-    } catch (err: any) {
-      const errorData = err.response?.data;
+    } catch (err: unknown) {
+      const errorData = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: string; details?: Array<{ message?: string }> })
+        : undefined;
       let message = errorData?.error || 'Failed to accept invitation. The link may be expired or already used.';
       if (errorData?.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
-        const detailMsg = errorData.details.map((d: any) => d.message).filter(Boolean).join('. ');
+        const detailMsg = errorData.details.map((d) => d.message).filter(Boolean).join('. ');
         if (detailMsg) message = detailMsg;
       }
       setError(message);
