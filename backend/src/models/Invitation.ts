@@ -14,6 +14,7 @@ const InvitationSchema = new Schema<IInvitation>(
       required: true,
       lowercase: true,
       trim: true,
+      index: true,
     },
     role: {
       type: String,
@@ -24,22 +25,23 @@ const InvitationSchema = new Schema<IInvitation>(
       type: String,
       enum: ['PENDING', 'ACCEPTED', 'EXPIRED', 'REVOKED'],
       default: 'PENDING',
+      index: true,
     },
     token: {
       type: String,
       required: true,
       unique: true,
+      index: true,
     },
     expiresAt: {
       type: Date,
       required: true,
+      index: { expireAfterSeconds: 0 },
     },
   },
   {
     timestamps: true,
   }
 );
-
-// Index for faster lookups (organizationId is indexed in schema, token has unique: true, email and expiresAt added)
 
 export const Invitation: Model<IInvitation> = mongoose.model<IInvitation>('Invitation', InvitationSchema);

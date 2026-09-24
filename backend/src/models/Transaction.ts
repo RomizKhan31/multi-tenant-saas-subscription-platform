@@ -13,6 +13,7 @@ const TransactionSchema = new Schema<ITransaction>(
       type: Schema.Types.ObjectId,
       ref: 'Payment',
       required: true,
+      index: true,
     },
     amount: {
       type: Number,
@@ -28,6 +29,7 @@ const TransactionSchema = new Schema<ITransaction>(
       type: String,
       enum: Object.values(TransactionStatus),
       default: TransactionStatus.PENDING,
+      index: true,
     },
     description: {
       type: String,
@@ -39,6 +41,7 @@ const TransactionSchema = new Schema<ITransaction>(
   }
 );
 
-// Index for faster lookups (organizationId is indexed in schema, createdAt and status added)
+TransactionSchema.index({ organizationId: 1, createdAt: -1 });
+TransactionSchema.index({ createdAt: -1 });
 
 export const Transaction: Model<ITransaction> = mongoose.model<ITransaction>('Transaction', TransactionSchema);

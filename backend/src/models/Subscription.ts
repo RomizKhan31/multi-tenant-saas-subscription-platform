@@ -18,14 +18,17 @@ const SubscriptionSchema = new Schema<ISubscription>(
       type: String,
       enum: Object.values(SubscriptionStatus),
       default: SubscriptionStatus.PENDING,
+      index: true,
     },
     stripeSubscriptionId: {
       type: String,
       sparse: true,
+      index: true,
     },
     stripeCustomerId: {
       type: String,
       sparse: true,
+      index: true,
     },
     currentPeriodStart: {
       type: Date,
@@ -49,7 +52,5 @@ const SubscriptionSchema = new Schema<ISubscription>(
     timestamps: true,
   }
 );
-
-// Index for faster lookups (organizationId and stripeSubscriptionId are indexed in schema)
 
 export const Subscription: Model<ISubscription> = mongoose.model<ISubscription>('Subscription', SubscriptionSchema);

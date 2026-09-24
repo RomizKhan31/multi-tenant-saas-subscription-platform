@@ -4,6 +4,7 @@ import { IUser, UserRole } from '../types';
 import { Types } from 'mongoose';
 import crypto from 'crypto';
 import { sendInvitationEmail } from '../utils/email';
+import { generateToken } from '../utils/jwt';
 
 export class MemberService {
   constructor(
@@ -81,7 +82,6 @@ export class MemberService {
     await this.invitationRepository.update(invitation._id, { status: 'ACCEPTED' });
 
     // Generate auth token
-    const { generateToken } = require('../utils/jwt');
     const authToken = generateToken({
       userId: user._id.toString(),
       email: user.email,
@@ -89,7 +89,7 @@ export class MemberService {
       organizationId: user.organizationId?.toString(),
     });
 
-    const { password, ...userWithoutPassword } = user.toObject();
+    const { password: _password, ...userWithoutPassword } = user.toObject();
 
     return { user: userWithoutPassword, token: authToken };
   }
@@ -104,7 +104,7 @@ export class MemberService {
       throw new Error('User is not a member of this organization');
     }
 
-    await this.userRepository.update(userId, { organizationId: undefined });
+    await this.userRepository.update(userId, { organizationId: null as any });
   }
 
   async changeMemberRole(
@@ -124,7 +124,11 @@ export class MemberService {
     await this.userRepository.update(userId, { role: newRole });
   }
 
-  async getOrganizationMembers(organizationId: Types.ObjectId): Promise<IUser[]> {
-    return this.userRepository.findByOrganizationId(organizationId);
+  async getOrganizationMembers(organizationId: Types.ObjectId): Promise<Omit<IUser, 'password'>[]> {
+    const members = await this.userRepository.findByOrganizationId(organizationId);
+    return members.map((m: any) => {
+      const { password: _password, ...rest } = m;
+      return rest;
+    });
   }
 }

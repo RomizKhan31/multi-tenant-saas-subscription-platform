@@ -13,10 +13,12 @@ const PasswordResetTokenSchema = new Schema<IPasswordResetToken>(
       type: String,
       required: true,
       unique: true,
+      index: true,
     },
     expiresAt: {
       type: Date,
       required: true,
+      index: { expireAfterSeconds: 0 },
     },
   },
   {
@@ -24,6 +26,7 @@ const PasswordResetTokenSchema = new Schema<IPasswordResetToken>(
   }
 );
 
-// Index for faster lookups (userId is indexed in schema, token has unique: true, expiresAt added)
-
-export const PasswordResetToken: Model<IPasswordResetToken> = mongoose.model<IPasswordResetToken>('PasswordResetToken', PasswordResetTokenSchema);
+export const PasswordResetToken: Model<IPasswordResetToken> = mongoose.model<IPasswordResetToken>(
+  'PasswordResetToken',
+  PasswordResetTokenSchema
+);

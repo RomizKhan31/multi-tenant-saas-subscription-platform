@@ -13,6 +13,7 @@ const PaymentSchema = new Schema<IPayment>(
       type: Schema.Types.ObjectId,
       ref: 'Subscription',
       required: true,
+      index: true,
     },
     amount: {
       type: Number,
@@ -28,6 +29,7 @@ const PaymentSchema = new Schema<IPayment>(
       type: String,
       enum: Object.values(PaymentStatus),
       default: PaymentStatus.PENDING,
+      index: true,
     },
     stripePaymentIntentId: {
       type: String,
@@ -37,13 +39,12 @@ const PaymentSchema = new Schema<IPayment>(
     stripeCheckoutSessionId: {
       type: String,
       sparse: true,
+      index: true,
     },
   },
   {
     timestamps: true,
   }
 );
-
-// Index for faster lookups (organizationId and stripePaymentIntentId are indexed in schema)
 
 export const Payment: Model<IPayment> = mongoose.model<IPayment>('Payment', PaymentSchema);

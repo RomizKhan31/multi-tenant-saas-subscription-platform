@@ -7,6 +7,7 @@ const OrganizationSchema = new Schema<IOrganization>(
       type: String,
       required: true,
       trim: true,
+      index: true,
     },
     contactEmail: {
       type: String,
@@ -24,13 +25,12 @@ const OrganizationSchema = new Schema<IOrganization>(
       type: String,
       enum: Object.values(OrganizationStatus),
       default: OrganizationStatus.TRIAL,
+      index: true,
     },
   },
   {
     timestamps: true,
   }
 );
-
-// Index for faster lookups (name and status are indexed in schema)
 
 export const Organization: Model<IOrganization> = mongoose.model<IOrganization>('Organization', OrganizationSchema);
