@@ -121,9 +121,19 @@ export class PaymentController {
   getInvoice = async (req: IAuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const organizationId = req.user?.role === 'PLATFORM_ADMIN' ? undefined : req.user?.organizationId;
+      const isPlatformAdmin = req.user?.role === 'PLATFORM_ADMIN';
+      const organizationId = isPlatformAdmin ? undefined : req.user?.organizationId;
+
+      if (!isPlatformAdmin && !organizationId) {
+        res.status(403).json({ error: 'Unauthorized access to payment invoice' });
+        return;
+      }
+
       const invoice = await this.paymentService.getInvoiceData(id as any, organizationId);
-      res.status(200).json(invoice);
+      res.status(200).json({
+        ...invoice,
+        invoice,
+      });
     } catch (error: any) {
       if (error.message.includes('Unauthorized')) {
         res.status(403).json({ error: error.message });

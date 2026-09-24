@@ -16,6 +16,10 @@ import {
   Receipt,
   History,
   ShieldAlert,
+  Download,
+  ReceiptText,
+  Printer,
+  Loader2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -77,6 +81,132 @@ export default function PlatformAdminDashboard() {
     billingInterval: 'MONTHLY',
     features: '',
   });
+
+  // Invoice state & handlers
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<any | null>(null);
+
+  const handleViewInvoice = async (paymentId: string) => {
+    setSelectedInvoiceId(paymentId);
+    setInvoiceLoading(true);
+    setInvoiceData(null);
+    try {
+      const res = await api.get<any>(`/payments/${paymentId}/invoice`);
+      const data = res.data?.invoice || res.data;
+      setInvoiceData(data);
+    } catch (err: any) {
+      setNotice({ type: 'error', message: err?.response?.data?.error || 'Failed to fetch invoice.' });
+      setSelectedInvoiceId(null);
+    } finally {
+      setInvoiceLoading(false);
+    }
+  };
+
+  const handleDownloadJson = (data: any) => {
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${data.invoiceNumber || 'invoice'}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadHtml = (data: any) => {
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice ${data.invoiceNumber}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 40px; color: #1e293b; background: #fff; }
+    .invoice-card { max-width: 650px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }
+    .title { font-size: 24px; font-weight: 800; color: #4338ca; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; background: #ecfdf5; color: #047857; margin-top: 4px; }
+    .details { display: flex; justify-content: space-between; margin-top: 24px; font-size: 13px; line-height: 1.6; }
+    .details-box { background: #f8fafc; padding: 16px; border-radius: 8px; width: 46%; }
+    .label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 28px; font-size: 13px; }
+    th { text-align: left; padding: 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+    td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+    .total-box { margin-top: 24px; background: #eef2ff; padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 800; color: #312e81; }
+    .footer { margin-top: 32px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="invoice-card">
+    <div class="header">
+      <div>
+        <div class="title">INVOICE</div>
+        <div style="font-family: monospace; font-weight: 700; color: #475569; margin-top: 4px;">${data.invoiceNumber}</div>
+        <div class="badge">${data.status}</div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-weight: 800; font-size: 16px; color: #0f172a;">SaaS Platform</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Billing & Subscriptions</div>
+        <div style="font-size: 12px; color: #64748b;">${formatDate(data.date)}</div>
+      </div>
+    </div>
+    <div class="details">
+      <div class="details-box">
+        <div class="label">Billed To</div>
+        <div style="font-weight: 700; color: #0f172a;">${data.organization?.name || 'Customer'}</div>
+        <div>${data.organization?.billingEmail || ''}</div>
+      </div>
+      <div class="details-box">
+        <div class="label">Payment Details</div>
+        <div><strong>Status:</strong> ${data.status}</div>
+        <div><strong>Currency:</strong> ${data.currency}</div>
+        ${data.paymentIntentId ? `<div style="font-family: monospace; font-size: 11px; word-break: break-all;"><strong>Ref:</strong> ${data.paymentIntentId}</div>` : ''}
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th style="text-align: center;">Qty</th>
+          <th style="text-align: right;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${(data.lineItems && data.lineItems.length > 0
+          ? data.lineItems
+          : [{ description: `${data.planName || 'Subscription Plan'} (${data.billingInterval || 'MONTHLY'})`, quantity: 1, amount: data.amount }]
+        ).map((item: any) => `
+          <tr>
+            <td><strong>${item.description}</strong></td>
+            <td style="text-align: center;">${item.quantity || 1}</td>
+            <td style="text-align: right; font-weight: 600;">${formatCurrency(item.amount, data.currency)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    <div class="total-box">
+      <span>Total Paid</span>
+      <span>${formatCurrency(data.amount, data.currency)}</span>
+    </div>
+    <div class="footer">
+      This is a verified computer-generated tax invoice for tenant subscriptions. Platform Administrator Audit Record.
+    </div>
+  </div>
+</body>
+</html>`;
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${data.invoiceNumber || 'invoice'}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'PLATFORM_ADMIN')) router.replace('/login');
@@ -787,7 +917,16 @@ export default function PlatformAdminDashboard() {
                         {orgDetails.data.payments?.map((p) => (
                           <div key={p._id} className="p-2.5 flex items-center justify-between text-xs">
                             <span>{formatCurrency(p.amount, p.currency.toUpperCase())} · {formatDate(p.createdAt)}</span>
-                            <StatusBadge value={p.status} />
+                            <div className="flex items-center gap-2">
+                              <StatusBadge value={p.status} />
+                              <button
+                                type="button"
+                                onClick={() => handleViewInvoice(p._id)}
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md transition"
+                              >
+                                <Download size={11} /> Invoice
+                              </button>
+                            </div>
                           </div>
                         ))}
                         {!orgDetails.data.payments?.length && (
@@ -817,6 +956,146 @@ export default function PlatformAdminDashboard() {
               ) : (
                 <div className="py-6 text-center text-rose-600 text-sm">
                   Could not load organization details.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Platform Admin Invoice Modal */}
+        {selectedInvoiceId && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+            <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2">
+                  <ReceiptText size={20} className="text-indigo-600" />
+                  <h3 className="text-lg font-bold text-slate-900">Payment Invoice (Admin Audit)</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedInvoiceId(null)}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {invoiceLoading ? (
+                <div className="py-12 flex items-center justify-center text-slate-500 text-sm">
+                  <Loader2 className="animate-spin mr-2" size={18} /> Generating invoice details...
+                </div>
+              ) : invoiceData ? (
+                <div id="printable-invoice" className="space-y-5 text-sm">
+                  {/* Invoice Header */}
+                  <div className="flex justify-between items-start bg-slate-50 p-4 rounded-xl">
+                    <div>
+                      <p className="text-xs uppercase font-semibold text-slate-400">Invoice Number</p>
+                      <p className="font-mono font-bold text-slate-800 text-sm mt-0.5">
+                        {invoiceData.invoiceNumber}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">{formatDate(invoiceData.date)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs uppercase font-semibold text-slate-400">Billed To</p>
+                      <p className="font-bold text-slate-800 text-sm mt-0.5">
+                        {invoiceData.organization?.name || 'Customer'}
+                      </p>
+                      <p className="text-xs text-slate-500">{invoiceData.organization?.billingEmail || ''}</p>
+                    </div>
+                  </div>
+
+                  {/* Line Items */}
+                  <div className="border border-slate-100 rounded-xl overflow-hidden">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase">
+                        <tr>
+                          <th className="p-3">Description</th>
+                          <th className="p-3 text-right">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {(invoiceData.lineItems && invoiceData.lineItems.length > 0
+                          ? invoiceData.lineItems
+                          : [
+                              {
+                                description: `${invoiceData.planName || 'Subscription Plan'} (${invoiceData.billingInterval || 'MONTHLY'})`,
+                                amount: invoiceData.amount,
+                                quantity: 1,
+                              },
+                            ]
+                        ).map((li: any, idx: number) => (
+                          <tr key={idx}>
+                            <td className="p-3 font-medium text-slate-800">{li.description}</td>
+                            <td className="p-3 text-right font-semibold text-slate-900">
+                              {formatCurrency(li.amount, invoiceData.currency)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Payment Details */}
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl text-slate-600">
+                    <div>
+                      <span className="font-medium text-slate-500">Status: </span>
+                      <span className="font-bold text-emerald-700">{invoiceData.status}</span>
+                    </div>
+                    {invoiceData.paymentIntentId && (
+                      <div className="text-right truncate">
+                        <span className="font-medium text-slate-500">Ref: </span>
+                        <span className="font-mono text-[11px] text-slate-700">
+                          {invoiceData.paymentIntentId}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Total & Status */}
+                  <div className="flex justify-between items-center p-3 bg-indigo-50/50 rounded-xl">
+                    <span className="font-bold text-slate-900">Total Paid</span>
+                    <span className="text-lg font-black text-indigo-700">
+                      {formatCurrency(invoiceData.amount, invoiceData.currency)}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="no-print pt-2 flex flex-wrap justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadJson(invoiceData)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      title="Download raw invoice data in JSON format"
+                    >
+                      <Download size={14} /> Download JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadHtml(invoiceData)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      title="Download formatted HTML invoice document"
+                    >
+                      <Download size={14} /> Download Invoice
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                    >
+                      <Printer size={14} /> Print / PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedInvoiceId(null)}
+                      className="px-4 py-2 rounded-xl bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-700"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-6 text-center text-sm text-rose-600">
+                  Could not load invoice data.
                 </div>
               )}
             </div>

@@ -1,6 +1,7 @@
 import { PaymentRepository } from '../repositories';
 import { SubscriptionRepository } from '../repositories';
 import { PlanRepository } from '../repositories';
+import { OrganizationRepository } from '../repositories';
 import { IPayment, PaymentStatus, SubscriptionStatus } from '../types';
 import { Types } from 'mongoose';
 import { stripe } from '../config/stripe';
@@ -9,7 +10,8 @@ export class PaymentService {
   constructor(
     private paymentRepository: PaymentRepository,
     private subscriptionRepository: SubscriptionRepository,
-    private planRepository: PlanRepository
+    private planRepository: PlanRepository,
+    private organizationRepository?: OrganizationRepository
   ) {}
 
   async createCheckoutSession(
@@ -135,19 +137,44 @@ export class PaymentService {
 
     const subscription = await this.subscriptionRepository.findById(payment.subscriptionId);
     const plan = subscription ? await this.planRepository.findById(subscription.planId) : null;
+    const organization = this.organizationRepository
+      ? await this.organizationRepository.findById(payment.organizationId)
+      : null;
+
+    const planName = plan?.name || 'Subscription Plan';
+    const billingInterval = plan?.billingInterval || 'MONTHLY';
 
     return {
       invoiceNumber: `INV-${payment._id.toString().slice(-8).toUpperCase()}`,
       paymentId: payment._id,
       organizationId: payment.organizationId,
+      organization: {
+        id: payment.organizationId,
+        name: organization?.name || 'Organization',
+        billingEmail: organization?.billingEmail || organization?.contactEmail || '',
+        contactEmail: organization?.contactEmail || '',
+      },
       date: payment.createdAt,
+      dueDate: payment.createdAt,
       amount: payment.amount,
       currency: payment.currency.toUpperCase(),
       status: payment.status,
       stripePaymentIntentId: payment.stripePaymentIntentId,
+      paymentIntentId: payment.stripePaymentIntentId,
       stripeCheckoutSessionId: payment.stripeCheckoutSessionId,
-      planName: plan?.name || 'Subscription Plan',
-      billingInterval: plan?.billingInterval || 'MONTHLY',
+      planName,
+      billingInterval,
+      lineItems: [
+        {
+          description: `${planName} (${billingInterval})`,
+          amount: payment.amount,
+          quantity: 1,
+          unitPrice: payment.amount,
+        },
+      ],
+      subtotal: payment.amount,
+      tax: 0,
+      total: payment.amount,
     };
   }
 }

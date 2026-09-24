@@ -63,15 +63,24 @@ type Transaction = {
 type InvoiceData = {
   invoiceNumber: string;
   date: string;
+  dueDate?: string;
   organization: {
+    id?: string;
     name: string;
     billingEmail: string;
+    contactEmail?: string;
   };
   amount: number;
   currency: string;
   status: string;
-  lineItems: Array<{ description: string; amount: number; quantity: number }>;
-  paymentIntentId: string;
+  planName?: string;
+  billingInterval?: string;
+  lineItems: Array<{ description: string; amount: number; quantity: number; unitPrice?: number }>;
+  paymentIntentId?: string;
+  stripePaymentIntentId?: string;
+  subtotal?: number;
+  tax?: number;
+  total?: number;
 };
 
 const getApiMessage = (error: any, fallback: string) => error?.response?.data?.error || fallback;
@@ -215,14 +224,120 @@ export default function OrganizationAdminDashboard() {
     setInvoiceLoading(true);
     setInvoiceData(null);
     try {
-      const res = await api.get<{ invoice: InvoiceData }>(`/payments/${paymentId}/invoice`);
-      setInvoiceData(res.data.invoice);
+      const res = await api.get<any>(`/payments/${paymentId}/invoice`);
+      const data = res.data?.invoice || res.data;
+      setInvoiceData(data);
     } catch (err: any) {
       setNotice(getApiMessage(err, 'Failed to fetch invoice.'));
       setSelectedInvoiceId(null);
     } finally {
       setInvoiceLoading(false);
     }
+  };
+
+  const handleDownloadJson = (data: InvoiceData) => {
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${data.invoiceNumber || 'invoice'}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadHtml = (data: InvoiceData) => {
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice ${data.invoiceNumber}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 40px; color: #1e293b; background: #fff; }
+    .invoice-card { max-width: 650px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }
+    .title { font-size: 24px; font-weight: 800; color: #4338ca; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; background: #ecfdf5; color: #047857; margin-top: 4px; }
+    .details { display: flex; justify-content: space-between; margin-top: 24px; font-size: 13px; line-height: 1.6; }
+    .details-box { background: #f8fafc; padding: 16px; border-radius: 8px; width: 46%; }
+    .label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 28px; font-size: 13px; }
+    th { text-align: left; padding: 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+    td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+    .total-box { margin-top: 24px; background: #eef2ff; padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 800; color: #312e81; }
+    .footer { margin-top: 32px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="invoice-card">
+    <div class="header">
+      <div>
+        <div class="title">INVOICE</div>
+        <div style="font-family: monospace; font-weight: 700; color: #475569; margin-top: 4px;">${data.invoiceNumber}</div>
+        <div class="badge">${data.status}</div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-weight: 800; font-size: 16px; color: #0f172a;">SaaS Platform</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Billing & Subscriptions</div>
+        <div style="font-size: 12px; color: #64748b;">${formatDate(data.date)}</div>
+      </div>
+    </div>
+    <div class="details">
+      <div class="details-box">
+        <div class="label">Billed To</div>
+        <div style="font-weight: 700; color: #0f172a;">${data.organization?.name || organization.data?.name || 'Customer'}</div>
+        <div>${data.organization?.billingEmail || organization.data?.billingEmail || ''}</div>
+      </div>
+      <div class="details-box">
+        <div class="label">Payment Details</div>
+        <div><strong>Status:</strong> ${data.status}</div>
+        <div><strong>Currency:</strong> ${data.currency}</div>
+        ${data.paymentIntentId ? `<div style="font-family: monospace; font-size: 11px; word-break: break-all;"><strong>Ref:</strong> ${data.paymentIntentId}</div>` : ''}
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th style="text-align: center;">Qty</th>
+          <th style="text-align: right;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${(data.lineItems && data.lineItems.length > 0
+          ? data.lineItems
+          : [{ description: `${data.planName || 'Subscription Plan'} (${data.billingInterval || 'MONTHLY'})`, quantity: 1, amount: data.amount }]
+        ).map((item) => `
+          <tr>
+            <td><strong>${item.description}</strong></td>
+            <td style="text-align: center;">${item.quantity || 1}</td>
+            <td style="text-align: right; font-weight: 600;">${formatCurrency(item.amount, data.currency)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    <div class="total-box">
+      <span>Total Paid</span>
+      <span>${formatCurrency(data.amount, data.currency)}</span>
+    </div>
+    <div class="footer">
+      This is a verified computer-generated tax invoice for tenant subscriptions. Thank you for your business.
+    </div>
+  </div>
+</body>
+</html>`;
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${data.invoiceNumber || 'invoice'}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   if (!user) return null;
@@ -615,7 +730,7 @@ export default function OrganizationAdminDashboard() {
                   <Loader2 className="animate-spin mr-2" size={18} /> Generating invoice details...
                 </div>
               ) : invoiceData ? (
-                <div className="space-y-5 text-sm">
+                <div id="printable-invoice" className="space-y-5 text-sm">
                   {/* Invoice Header */}
                   <div className="flex justify-between items-start bg-slate-50 p-4 rounded-xl">
                     <div>
@@ -628,9 +743,11 @@ export default function OrganizationAdminDashboard() {
                     <div className="text-right">
                       <p className="text-xs uppercase font-semibold text-slate-400">Billed To</p>
                       <p className="font-bold text-slate-800 text-sm mt-0.5">
-                        {invoiceData.organization.name}
+                        {invoiceData.organization?.name || organization.data?.name || 'Customer'}
                       </p>
-                      <p className="text-xs text-slate-500">{invoiceData.organization.billingEmail}</p>
+                      <p className="text-xs text-slate-500">
+                        {invoiceData.organization?.billingEmail || organization.data?.billingEmail || ''}
+                      </p>
                     </div>
                   </div>
 
@@ -644,7 +761,16 @@ export default function OrganizationAdminDashboard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {invoiceData.lineItems.map((li, idx) => (
+                        {(invoiceData.lineItems && invoiceData.lineItems.length > 0
+                          ? invoiceData.lineItems
+                          : [
+                              {
+                                description: `${invoiceData.planName || 'Subscription Plan'} (${invoiceData.billingInterval || 'MONTHLY'})`,
+                                amount: invoiceData.amount,
+                                quantity: 1,
+                              },
+                            ]
+                        ).map((li, idx) => (
                           <tr key={idx}>
                             <td className="p-3 font-medium text-slate-800">{li.description}</td>
                             <td className="p-3 text-right font-semibold text-slate-900">
@@ -656,6 +782,22 @@ export default function OrganizationAdminDashboard() {
                     </table>
                   </div>
 
+                  {/* Payment Details */}
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl text-slate-600">
+                    <div>
+                      <span className="font-medium text-slate-500">Status: </span>
+                      <span className="font-bold text-emerald-700">{invoiceData.status}</span>
+                    </div>
+                    {invoiceData.paymentIntentId && (
+                      <div className="text-right truncate">
+                        <span className="font-medium text-slate-500">Ref: </span>
+                        <span className="font-mono text-[11px] text-slate-700">
+                          {invoiceData.paymentIntentId}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Total & Status */}
                   <div className="flex justify-between items-center p-3 bg-indigo-50/50 rounded-xl">
                     <span className="font-bold text-slate-900">Total Paid</span>
@@ -665,14 +807,32 @@ export default function OrganizationAdminDashboard() {
                   </div>
 
                   {/* Actions */}
-                  <div className="pt-2 flex justify-end gap-2">
+                  <div className="no-print pt-2 flex flex-wrap justify-end gap-2">
                     <button
-                      onClick={() => window.print()}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      type="button"
+                      onClick={() => handleDownloadJson(invoiceData)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      title="Download raw invoice data in JSON format"
                     >
-                      <Printer size={14} /> Print Invoice
+                      <Download size={14} /> Download JSON
                     </button>
                     <button
+                      type="button"
+                      onClick={() => handleDownloadHtml(invoiceData)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      title="Download formatted HTML invoice document"
+                    >
+                      <Download size={14} /> Download Invoice
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                    >
+                      <Printer size={14} /> Print / PDF
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setSelectedInvoiceId(null)}
                       className="px-4 py-2 rounded-xl bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-700"
                     >

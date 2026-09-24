@@ -84,7 +84,8 @@ const subscriptionService = new services.SubscriptionService(
 const paymentService = new services.PaymentService(
   paymentRepository,
   subscriptionRepository,
-  planRepository
+  planRepository,
+  organizationRepository
 );
 const transactionService = new services.TransactionService(transactionRepository, paymentRepository);
 const memberService = new services.MemberService(userRepository, invitationRepository);

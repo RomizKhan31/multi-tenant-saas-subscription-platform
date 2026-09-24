@@ -175,6 +175,12 @@ describe('Payment & Invoice Tests', () => {
       expect(response.body.amount).toBe(99.0);
       expect(response.body.currency).toBe('USD');
       expect(response.body.planName).toBe('Pro Plan');
+      expect(response.body.organization.name).toBe('Alpha Corp');
+      expect(response.body.organization.billingEmail).toBe('billing@alpha.com');
+      expect(response.body.lineItems).toBeDefined();
+      expect(response.body.lineItems.length).toBeGreaterThan(0);
+      expect(response.body.invoice).toBeDefined();
+      expect(response.body.invoice.invoiceNumber).toBe(response.body.invoiceNumber);
     });
 
     it('should reject access to another organization invoice (Cross-tenant isolation)', async () => {
