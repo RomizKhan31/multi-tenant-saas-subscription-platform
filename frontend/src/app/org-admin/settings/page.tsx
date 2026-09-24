@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Settings, Building2, Save } from 'lucide-react';
+import { Building2, Save } from 'lucide-react';
+import axios from 'axios';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { QueryState } from '@/components/dashboard-ui';
@@ -26,10 +27,12 @@ export default function OrgAdminSettingsPage() {
 
   useEffect(() => {
     if (organization.data) {
-      setProfile({
-        name: organization.data.name || '',
-        contactEmail: organization.data.contactEmail || '',
-        billingEmail: organization.data.billingEmail || '',
+      queueMicrotask(() => {
+        setProfile({
+          name: organization.data.name || '',
+          contactEmail: organization.data.contactEmail || '',
+          billingEmail: organization.data.billingEmail || '',
+        });
       });
     }
   }, [organization.data]);
@@ -41,10 +44,14 @@ export default function OrgAdminSettingsPage() {
       queryClient.invalidateQueries({ queryKey: ['current-org-header'] });
       setNotice({ type: 'success', message: 'Organization profile updated successfully.' });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : 'Failed to update organization profile.';
       setNotice({
         type: 'error',
-        message: error?.response?.data?.error || 'Failed to update organization profile.',
+        message,
       });
     },
   });

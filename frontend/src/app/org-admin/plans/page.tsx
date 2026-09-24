@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CreditCard, Check, AlertCircle, ArrowRight, Zap, CheckCircle2 } from 'lucide-react';
+import { Check, AlertCircle, ArrowRight, Zap, CheckCircle2 } from 'lucide-react';
+import axios from 'axios';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import {
@@ -53,10 +54,14 @@ export default function OrgAdminPlansPage() {
         message: 'Subscription set to cancel at end of current billing period.',
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : 'Could not cancel subscription.';
       setNotice({
         type: 'error',
-        message: error?.response?.data?.error || 'Could not cancel subscription.',
+        message,
       });
     },
   });
@@ -68,10 +73,14 @@ export default function OrgAdminPlansPage() {
       if (data.url) window.location.assign(data.url);
       else setNotice({ type: 'error', message: 'Checkout session could not be established.' });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : 'Failed to start Stripe checkout.';
       setNotice({
         type: 'error',
-        message: error?.response?.data?.error || 'Failed to start Stripe checkout.',
+        message,
       });
     },
   });

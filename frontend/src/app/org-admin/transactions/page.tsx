@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ReceiptText, Download, Eye, FileText, CheckCircle2 } from 'lucide-react';
+import { ReceiptText, Download, Eye } from 'lucide-react';
+import axios from 'axios';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import {
@@ -34,6 +35,8 @@ type Transaction = {
   createdAt: string;
   description?: string;
 };
+
+type InvoiceResponse = { invoice?: InvoiceRecord };
 
 export default function OrgAdminTransactionsPage() {
   const [statusFilter, setStatusFilter] = useState('');
@@ -75,20 +78,24 @@ export default function OrgAdminTransactionsPage() {
     try {
       let res;
       try {
-        res = await api.get<any>(`/payments/${idToUse}/invoice`);
+        res = await api.get<InvoiceResponse>(`/payments/${idToUse}/invoice`);
       } catch (err) {
         if (fallbackPaymentId && recordId !== fallbackPaymentId) {
-          res = await api.get<any>(`/payments/${recordId}/invoice`);
+          res = await api.get<InvoiceResponse>(`/payments/${recordId}/invoice`);
         } else {
           throw err;
         }
       }
-      const data = res.data?.invoice || res.data;
+      const data = res.data?.invoice || (res.data as unknown as InvoiceRecord);
       setInvoiceData(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && err.response?.data?.error
+          ? err.response.data.error
+          : 'Failed to fetch invoice. Please try again.';
       setNotice({
         type: 'error',
-        message: err?.response?.data?.error || 'Failed to fetch invoice. Please try again.',
+        message,
       });
     } finally {
       setInvoiceLoading(false);
@@ -103,15 +110,15 @@ export default function OrgAdminTransactionsPage() {
     try {
       let res;
       try {
-        res = await api.get<any>(`/payments/${idToUse}/invoice`);
+        res = await api.get<InvoiceResponse>(`/payments/${idToUse}/invoice`);
       } catch (err) {
         if (fallbackPaymentId && recordId !== fallbackPaymentId) {
-          res = await api.get<any>(`/payments/${recordId}/invoice`);
+          res = await api.get<InvoiceResponse>(`/payments/${recordId}/invoice`);
         } else {
           throw err;
         }
       }
-      const data = res.data?.invoice || res.data;
+      const data = res.data?.invoice || (res.data as unknown as InvoiceRecord);
       if (data) {
         downloadInvoiceHtml(data);
         setNotice({
@@ -119,21 +126,35 @@ export default function OrgAdminTransactionsPage() {
           message: `Invoice ${data.invoiceNumber || ''} downloaded successfully.`,
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && err.response?.data?.error
+          ? err.response.data.error
+          : 'Failed to download invoice document.';
       setNotice({
         type: 'error',
-        message: err?.response?.data?.error || 'Failed to download invoice document.',
+        message,
       });
     } finally {
       setDownloadingId(null);
     }
   };
 
-  // Combine payments and transactions into unified list if needed, prioritizing payments
+  // Deduplicate and combine payments and transactions:
+  // Payments are the primary invoice sources. Transactions are audit trail ledger entries.
+  // When both exist, avoid displaying duplicates if a transaction references an existing payment.
   const paymentList = payments.data || [];
   const transactionList = transactions.data || [];
 
-  const invoiceRecords = paymentList.length > 0 ? paymentList : transactionList;
+  const paymentIds = new Set(paymentList.map((p) => p._id));
+  const standaloneTransactions = transactionList.filter(
+    (t) => !t.paymentId || !paymentIds.has(t.paymentId)
+  );
+
+  const invoiceRecords: (Payment | Transaction)[] = [
+    ...paymentList,
+    ...standaloneTransactions,
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <div className="space-y-6">
@@ -188,6 +209,8 @@ export default function OrgAdminTransactionsPage() {
               <option value="SUCCESS">SUCCESS</option>
               <option value="PENDING">PENDING</option>
               <option value="FAILED">FAILED</option>
+              <option value="REFUNDED">REFUNDED</option>
+              <option value="ROLLED_BACK">ROLLED_BACK</option>
             </select>
           </div>
         </div>
@@ -198,7 +221,9 @@ export default function OrgAdminTransactionsPage() {
         >
           {invoiceRecords.length === 0 ? (
             <div className="p-12 text-center text-slate-500 text-sm">
-              No invoice or payment records found for this organization.
+              {statusFilter
+                ? `No ${statusFilter} records found for this organization.`
+                : 'No invoice or payment records found for this organization.'}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -213,8 +238,8 @@ export default function OrgAdminTransactionsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {invoiceRecords.map((item: any) => {
-                    const paymentId = item.paymentId || item._id;
+                  {invoiceRecords.map((item: Payment | Transaction) => {
+                    const fallbackPaymentId = 'paymentId' in item ? item.paymentId : undefined;
                     const isDownloading = downloadingId === item._id;
 
                     return (
@@ -234,7 +259,7 @@ export default function OrgAdminTransactionsPage() {
                         <td className="px-5 py-4 text-right space-x-2 whitespace-nowrap">
                           <button
                             type="button"
-                            onClick={() => handleViewInvoice(item._id, item.paymentId)}
+                            onClick={() => handleViewInvoice(item._id, fallbackPaymentId)}
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition"
                           >
                             <Eye size={13} /> View Invoice
@@ -242,7 +267,7 @@ export default function OrgAdminTransactionsPage() {
 
                           <button
                             type="button"
-                            onClick={() => handleDirectDownload(item._id, item.paymentId)}
+                            onClick={() => handleDirectDownload(item._id, fallbackPaymentId)}
                             disabled={isDownloading}
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-200 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition disabled:opacity-50"
                           >

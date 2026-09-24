@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Users,
   CreditCard,
-  ReceiptText,
   DollarSign,
   ArrowRight,
   UserPlus,

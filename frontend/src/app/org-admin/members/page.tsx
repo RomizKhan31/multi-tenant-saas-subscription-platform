@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Users, UserPlus, Trash2, Shield, X, Mail } from 'lucide-react';
+import { Users, UserPlus, Trash2, X, Mail } from 'lucide-react';
+import axios from 'axios';
 import api from '@/lib/api';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { QueryState, StatusBadge, formatDate } from '@/components/dashboard-ui';
@@ -35,10 +36,14 @@ export default function OrgAdminMembersPage() {
       queryClient.invalidateQueries({ queryKey: ['members-list-page'] });
       setNotice({ type: 'success', message: 'Invitation sent successfully.' });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : 'Failed to send invitation.';
       setNotice({
         type: 'error',
-        message: error?.response?.data?.error || 'Failed to send invitation.',
+        message,
       });
     },
   });
@@ -50,10 +55,14 @@ export default function OrgAdminMembersPage() {
       queryClient.invalidateQueries({ queryKey: ['members-list-page'] });
       setNotice({ type: 'success', message: 'Member role updated.' });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : 'Failed to update member role.';
       setNotice({
         type: 'error',
-        message: error?.response?.data?.error || 'Failed to update member role.',
+        message,
       });
     },
   });
@@ -64,10 +73,14 @@ export default function OrgAdminMembersPage() {
       queryClient.invalidateQueries({ queryKey: ['members-list-page'] });
       setNotice({ type: 'success', message: 'Member removed from organization.' });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : 'Failed to remove member.';
       setNotice({
         type: 'error',
-        message: error?.response?.data?.error || 'Failed to remove member.',
+        message,
       });
     },
   });
