@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { OrganizationService } from '../services';
 import { z } from 'zod';
 import { IAuthRequest } from '../types';
+import { Types } from 'mongoose';
 
 const createOrganizationSchema = z.object({
   name: z.string().min(1),
@@ -14,6 +15,13 @@ const updateOrganizationSchema = z.object({
   contactEmail: z.string().email().optional(),
   billingEmail: z.string().email().optional(),
 });
+
+const parseObjectId = (id: string | string[] | undefined): Types.ObjectId | null => {
+  if (typeof id === 'string' && Types.ObjectId.isValid(id)) {
+    return new Types.ObjectId(id);
+  }
+  return null;
+};
 
 export class OrganizationController {
   constructor(private organizationService: OrganizationService) {}
@@ -34,8 +42,13 @@ export class OrganizationController {
 
   getOrganization = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const organization = await this.organizationService.getOrganizationById(id as any);
+      const orgId = parseObjectId(req.params.id);
+      if (!orgId) {
+        res.status(400).json({ error: 'Invalid organization ID format' });
+        return;
+      }
+
+      const organization = await this.organizationService.getOrganizationById(orgId);
       if (!organization) {
         res.status(404).json({ error: 'Organization not found' });
         return;
@@ -48,8 +61,13 @@ export class OrganizationController {
 
   getOrganizationDetails = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const details = await this.organizationService.getOrganizationDetails(id as any);
+      const orgId = parseObjectId(req.params.id);
+      if (!orgId) {
+        res.status(400).json({ error: 'Invalid organization ID format' });
+        return;
+      }
+
+      const details = await this.organizationService.getOrganizationDetails(orgId);
       if (!details) {
         res.status(404).json({ error: 'Organization not found' });
         return;
@@ -59,7 +77,6 @@ export class OrganizationController {
       res.status(500).json({ error: error.message });
     }
   };
-
 
   updateOrganization = async (req: IAuthRequest, res: Response): Promise<void> => {
     try {
@@ -126,8 +143,13 @@ export class OrganizationController {
 
   suspendOrganization = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const organization = await this.organizationService.suspendOrganization(id as any);
+      const orgId = parseObjectId(req.params.id);
+      if (!orgId) {
+        res.status(400).json({ error: 'Invalid organization ID format' });
+        return;
+      }
+
+      const organization = await this.organizationService.suspendOrganization(orgId);
       if (!organization) {
         res.status(404).json({ error: 'Organization not found' });
         return;
@@ -140,8 +162,13 @@ export class OrganizationController {
 
   reactivateOrganization = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const organization = await this.organizationService.reactivateOrganization(id as any);
+      const orgId = parseObjectId(req.params.id);
+      if (!orgId) {
+        res.status(400).json({ error: 'Invalid organization ID format' });
+        return;
+      }
+
+      const organization = await this.organizationService.reactivateOrganization(orgId);
       if (!organization) {
         res.status(404).json({ error: 'Organization not found' });
         return;
@@ -186,8 +213,13 @@ export class OrganizationController {
 
   getOrganizationMembers = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const members = await this.organizationService.getOrganizationMembers(id as any);
+      const orgId = parseObjectId(req.params.id);
+      if (!orgId) {
+        res.status(400).json({ error: 'Invalid organization ID format' });
+        return;
+      }
+
+      const members = await this.organizationService.getOrganizationMembers(orgId);
       res.status(200).json({ members, count: members.length });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

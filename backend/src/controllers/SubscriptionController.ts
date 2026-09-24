@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import { SubscriptionService } from '../services';
 import { z } from 'zod';
-import { IAuthRequest, SubscriptionStatus } from '../types';
+import { IAuthRequest } from '../types';
+import { Types } from 'mongoose';
 
 const updateSubscriptionSchema = z.object({
-  planId: z.string().optional(),
+  planId: z.string().min(1, 'Plan ID is required'),
 });
 
 export class SubscriptionController {
@@ -54,7 +55,12 @@ export class SubscriptionController {
 
   upgradeSubscription = async (req: IAuthRequest, res: Response): Promise<void> => {
     try {
-      const { planId } = req.body;
+      const validatedData = updateSubscriptionSchema.parse(req.body);
+      if (!Types.ObjectId.isValid(validatedData.planId)) {
+        res.status(400).json({ error: 'Invalid plan ID format' });
+        return;
+      }
+
       const organizationId = req.user?.organizationId;
       
       if (!organizationId) {
@@ -71,18 +77,27 @@ export class SubscriptionController {
 
       const updatedSubscription = await this.subscriptionService.upgradeSubscription(
         subscription._id,
-        planId as any
+        new Types.ObjectId(validatedData.planId)
       );
       
       res.status(200).json(updatedSubscription);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0]?.message || 'Validation error', details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   };
 
   downgradeSubscription = async (req: IAuthRequest, res: Response): Promise<void> => {
     try {
-      const { planId } = req.body;
+      const validatedData = updateSubscriptionSchema.parse(req.body);
+      if (!Types.ObjectId.isValid(validatedData.planId)) {
+        res.status(400).json({ error: 'Invalid plan ID format' });
+        return;
+      }
+
       const organizationId = req.user?.organizationId;
       
       if (!organizationId) {
@@ -99,12 +114,16 @@ export class SubscriptionController {
 
       const updatedSubscription = await this.subscriptionService.downgradeSubscription(
         subscription._id,
-        planId as any
+        new Types.ObjectId(validatedData.planId)
       );
       
       res.status(200).json(updatedSubscription);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0]?.message || 'Validation error', details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   };
 
@@ -142,7 +161,12 @@ export class SubscriptionController {
         filters.status = status;
       }
       if (organizationId) {
-        filters.organizationId = organizationId;
+        if (typeof organizationId === 'string' && Types.ObjectId.isValid(organizationId)) {
+          filters.organizationId = new Types.ObjectId(organizationId);
+        } else {
+          res.status(400).json({ error: 'Invalid organizationId format' });
+          return;
+        }
       }
 
       const [subscriptions, total] = await Promise.all([
@@ -173,4 +197,3 @@ export class SubscriptionController {
     }
   };
 }
-

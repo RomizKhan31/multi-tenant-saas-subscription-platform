@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PlanService } from '../services';
 import { z } from 'zod';
 import { BillingInterval } from '../types';
+import { Types } from 'mongoose';
 
 const createPlanSchema = z.object({
   name: z.string().min(1),
@@ -17,6 +18,13 @@ const updatePlanSchema = z.object({
   features: z.array(z.string()).optional(),
   isActive: z.boolean().optional(),
 });
+
+const parseObjectId = (id: string | string[] | undefined): Types.ObjectId | null => {
+  if (typeof id === 'string' && Types.ObjectId.isValid(id)) {
+    return new Types.ObjectId(id);
+  }
+  return null;
+};
 
 export class PlanController {
   constructor(private planService: PlanService) {}
@@ -37,8 +45,13 @@ export class PlanController {
 
   getPlan = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const plan = await this.planService.getPlanById(id as any);
+      const planId = parseObjectId(req.params.id);
+      if (!planId) {
+        res.status(400).json({ error: 'Invalid plan ID format' });
+        return;
+      }
+
+      const plan = await this.planService.getPlanById(planId);
       if (!plan) {
         res.status(404).json({ error: 'Plan not found' });
         return;
@@ -51,9 +64,14 @@ export class PlanController {
 
   updatePlan = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const planId = parseObjectId(req.params.id);
+      if (!planId) {
+        res.status(400).json({ error: 'Invalid plan ID format' });
+        return;
+      }
+
       const validatedData = updatePlanSchema.parse(req.body);
-      const plan = await this.planService.updatePlan(id as any, validatedData);
+      const plan = await this.planService.updatePlan(planId, validatedData);
       if (!plan) {
         res.status(404).json({ error: 'Plan not found' });
         return;
@@ -70,8 +88,13 @@ export class PlanController {
 
   disablePlan = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const plan = await this.planService.disablePlan(id as any);
+      const planId = parseObjectId(req.params.id);
+      if (!planId) {
+        res.status(400).json({ error: 'Invalid plan ID format' });
+        return;
+      }
+
+      const plan = await this.planService.disablePlan(planId);
       if (!plan) {
         res.status(404).json({ error: 'Plan not found' });
         return;
@@ -84,8 +107,13 @@ export class PlanController {
 
   enablePlan = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const plan = await this.planService.enablePlan(id as any);
+      const planId = parseObjectId(req.params.id);
+      if (!planId) {
+        res.status(400).json({ error: 'Invalid plan ID format' });
+        return;
+      }
+
+      const plan = await this.planService.enablePlan(planId);
       if (!plan) {
         res.status(404).json({ error: 'Plan not found' });
         return;
