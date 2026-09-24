@@ -146,10 +146,17 @@ export class AuthService {
 
 
   async getOnboardStatus(sessionId: string): Promise<{
-    status: 'PENDING' | 'COMPLETED' | 'EXPIRED' | 'NOT_FOUND';
+    status: 'PENDING' | 'COMPLETED' | 'EXPIRED' | 'NOT_FOUND' | 'FAILED';
     organizationName?: string;
     email?: string;
+    planName?: string;
+    flow?: 'ONBOARDING' | 'PLAN_CHANGE';
+    message?: string;
   }> {
+    if (this.webhookService) {
+      return this.webhookService.getSessionStatus(sessionId);
+    }
+
     if (!this.pendingRegistrationRepository) {
       return { status: 'NOT_FOUND' };
     }
@@ -159,18 +166,11 @@ export class AuthService {
       return { status: 'NOT_FOUND' };
     }
 
-    // If still pending, verify with Stripe and provision account immediately
-    if (pendingReg.status === 'PENDING' && this.webhookService) {
-      const synced = await this.webhookService.syncAndProcessSession(sessionId);
-      if (synced) {
-        pendingReg = await this.pendingRegistrationRepository.findByStripeCheckoutSessionId(sessionId);
-      }
-    }
-
     return {
-      status: pendingReg ? pendingReg.status : 'NOT_FOUND',
-      organizationName: pendingReg?.organizationName,
-      email: pendingReg?.email,
+      status: pendingReg.status === 'COMPLETED' ? 'COMPLETED' : pendingReg.status,
+      organizationName: pendingReg.organizationName,
+      email: pendingReg.email,
+      flow: 'ONBOARDING',
     };
   }
 

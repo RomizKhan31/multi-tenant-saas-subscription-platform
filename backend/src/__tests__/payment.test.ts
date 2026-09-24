@@ -161,6 +161,31 @@ describe('Payment & Invoice Tests', () => {
       expect(response.status).toBe(409);
       expect(response.body.error).toContain('already exists');
     });
+
+    it('should return session status for existing organization plan checkout', async () => {
+      const proPlusPlan = await Plan.create({
+        name: 'Pro Plus',
+        price: 199.0,
+        billingInterval: BillingInterval.MONTHLY,
+        features: ['All Pro features', 'Dedicated support'],
+        isActive: true,
+      });
+
+      const checkoutRes = await request(app)
+        .post('/api/payments/checkout')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ planId: proPlusPlan._id.toString() });
+
+      expect(checkoutRes.status).toBe(200);
+      expect(checkoutRes.body).toHaveProperty('sessionId');
+
+      const statusRes = await request(app)
+        .get(`/api/auth/onboard-status?sessionId=${checkoutRes.body.sessionId}`);
+
+      expect(statusRes.status).toBe(200);
+      expect(['PENDING', 'COMPLETED']).toContain(statusRes.body.status);
+      expect(statusRes.body.flow).toBe('PLAN_CHANGE');
+    });
   });
 
   describe('Downloadable Invoice Endpoint', () => {

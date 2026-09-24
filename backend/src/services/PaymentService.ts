@@ -72,6 +72,7 @@ export class PaymentService {
         metadata: {
           organizationId: organizationId.toString(),
           planId: planId.toString(),
+          customerEmail,
         },
       });
       sessionId = session.id;
