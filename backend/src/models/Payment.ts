@@ -15,6 +15,12 @@ const PaymentSchema = new Schema<IPayment>(
       required: true,
       index: true,
     },
+    planId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Plan',
+      sparse: true,
+      index: true,
+    },
     amount: {
       type: Number,
       required: true,

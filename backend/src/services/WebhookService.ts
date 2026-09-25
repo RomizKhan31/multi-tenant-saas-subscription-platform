@@ -15,6 +15,7 @@ import {
   TransactionStatus,
   OrganizationStatus,
   UserRole,
+  BillingInterval,
 } from '../types';
 import mongoose, { Types, startSession } from 'mongoose';
 import {
@@ -138,6 +139,7 @@ export class WebhookService {
           return true;
         }
 
+        // Try retrieving real Stripe session if live key is available
         if (process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
           try {
             const session = await stripe.checkout.sessions.retrieve(sessionId);
@@ -149,6 +151,7 @@ export class WebhookService {
             return false;
           }
         }
+
         return false;
       }
     }
@@ -160,6 +163,7 @@ export class WebhookService {
         return true;
       }
 
+      // Try retrieving real Stripe session if live key is available
       if (process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
         try {
           const session = await stripe.checkout.sessions.retrieve(sessionId);
@@ -168,28 +172,33 @@ export class WebhookService {
             return true;
           }
         } catch (err: any) {
-          // If in local mock mode without real Stripe session
-          if (sessionId.startsWith('cs_test_') && process.env.NODE_ENV !== 'production') {
-            const sub = await this.subscriptionRepository.findById(payment.subscriptionId);
-            const mockSession = {
-              id: sessionId,
-              payment_status: 'paid',
-              status: 'complete',
-              amount_total: payment.amount * 100,
-              currency: payment.currency,
-              customer: 'cus_simulated',
-              payment_intent: `pi_simulated_${Date.now()}`,
-              metadata: {
-                organizationId: payment.organizationId.toString(),
-                planId: sub?.planId?.toString(),
-              },
-            };
-            await this.handleCheckoutSessionCompleted(mockSession);
-            return true;
-          }
-          return false;
+          // Fall through to mock session if in non-production/test mode
         }
       }
+
+      // FIX: Process mock checkout session when running in non-production environments.
+      // Crucially, resolve the target plan using payment.planId if available, ensuring
+      // upgrade or downgrade updates to the intended new plan rather than reverting to the old one.
+      if (sessionId.startsWith('cs_test_') && process.env.NODE_ENV !== 'production') {
+        const sub = await this.subscriptionRepository.findById(payment.subscriptionId);
+        const targetPlanId = payment.planId || sub?.planId;
+        const mockSession = {
+          id: sessionId,
+          payment_status: 'paid',
+          status: 'complete',
+          amount_total: payment.amount * 100,
+          currency: payment.currency,
+          customer: 'cus_simulated',
+          payment_intent: `pi_simulated_${Date.now()}`,
+          metadata: {
+            organizationId: payment.organizationId.toString(),
+            planId: targetPlanId?.toString(),
+          },
+        };
+        await this.handleCheckoutSessionCompleted(mockSession);
+        return true;
+      }
+
       return false;
     }
 
@@ -432,6 +441,18 @@ export class WebhookService {
           throw new Error('Organization not found');
         }
 
+        // Determine renewal period dates based on target plan billing interval
+        const plan = this.planRepository
+          ? await this.planRepository.findById(new Types.ObjectId(planId))
+          : null;
+        const periodStart = new Date();
+        const periodEnd = new Date(periodStart);
+        if (plan?.billingInterval === BillingInterval.YEARLY) {
+          periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+        } else {
+          periodEnd.setDate(periodEnd.getDate() + 30);
+        }
+
         // Create or update subscription
         let subscription = await this.subscriptionRepository.findByOrganizationId(
           new Types.ObjectId(organizationId),
@@ -446,7 +467,10 @@ export class WebhookService {
               status: SubscriptionStatus.ACTIVE,
               stripeSubscriptionId: checkoutSession.subscription,
               stripeCustomerId: checkoutSession.customer,
+              currentPeriodStart: periodStart,
+              currentPeriodEnd: periodEnd,
               cancelAtPeriodEnd: false,
+              expiryReminderSent: false,
             },
             mongoSession
           );
@@ -458,6 +482,9 @@ export class WebhookService {
               status: SubscriptionStatus.ACTIVE,
               stripeSubscriptionId: checkoutSession.subscription,
               stripeCustomerId: checkoutSession.customer,
+              currentPeriodStart: periodStart,
+              currentPeriodEnd: periodEnd,
+              cancelAtPeriodEnd: false,
             },
             mongoSession
           );

@@ -48,3 +48,6 @@ Thumbs.db
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Local database data
+.data/

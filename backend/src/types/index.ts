@@ -109,6 +109,8 @@ export interface IPayment {
   _id: Types.ObjectId;
   organizationId: Types.ObjectId;
   subscriptionId: Types.ObjectId;
+  /** Target plan ID for subscription upgrades/downgrades during checkout */
+  planId?: Types.ObjectId;
   amount: number;
   currency: string;
   status: PaymentStatus;

@@ -68,11 +68,14 @@ export class SubscriptionController {
         return;
       }
 
-      const subscription = await this.subscriptionService.getSubscriptionByOrganizationId(organizationId);
-      
+      // If no subscription record exists yet (e.g. freshly registered organization),
+      // create the base subscription document so the upgrade succeeds without 404.
+      let subscription = await this.subscriptionService.getSubscriptionByOrganizationId(organizationId);
       if (!subscription) {
-        res.status(404).json({ error: 'Subscription not found' });
-        return;
+        subscription = await this.subscriptionService.createSubscription({
+          organizationId,
+          planId: new Types.ObjectId(validatedData.planId),
+        });
       }
 
       const updatedSubscription = await this.subscriptionService.upgradeSubscription(
@@ -84,6 +87,12 @@ export class SubscriptionController {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: error.errors[0]?.message || 'Validation error', details: error.errors });
+      } else if (
+        error.message?.includes('Plan not found') ||
+        error.message?.includes('no longer available') ||
+        error.message?.includes('Already subscribed')
+      ) {
+        res.status(400).json({ error: error.message });
       } else {
         res.status(500).json({ error: error.message });
       }
@@ -105,11 +114,12 @@ export class SubscriptionController {
         return;
       }
 
-      const subscription = await this.subscriptionService.getSubscriptionByOrganizationId(organizationId);
-      
+      let subscription = await this.subscriptionService.getSubscriptionByOrganizationId(organizationId);
       if (!subscription) {
-        res.status(404).json({ error: 'Subscription not found' });
-        return;
+        subscription = await this.subscriptionService.createSubscription({
+          organizationId,
+          planId: new Types.ObjectId(validatedData.planId),
+        });
       }
 
       const updatedSubscription = await this.subscriptionService.downgradeSubscription(
@@ -121,6 +131,12 @@ export class SubscriptionController {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: error.errors[0]?.message || 'Validation error', details: error.errors });
+      } else if (
+        error.message?.includes('Plan not found') ||
+        error.message?.includes('no longer available') ||
+        error.message?.includes('Already subscribed')
+      ) {
+        res.status(400).json({ error: error.message });
       } else {
         res.status(500).json({ error: error.message });
       }
@@ -143,8 +159,30 @@ export class SubscriptionController {
         return;
       }
 
-      const updatedSubscription = await this.subscriptionService.cancelSubscription(subscription._id);
+      const cancelImmediately = req.body?.cancelImmediately === true;
+      const updatedSubscription = await this.subscriptionService.cancelSubscription(subscription._id, cancelImmediately);
       
+      res.status(200).json(updatedSubscription);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  reactivateSubscription = async (req: IAuthRequest, res: Response): Promise<void> => {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        res.status(403).json({ error: 'No organization associated with user' });
+        return;
+      }
+
+      const subscription = await this.subscriptionService.getSubscriptionByOrganizationId(organizationId);
+      if (!subscription) {
+        res.status(404).json({ error: 'Subscription not found' });
+        return;
+      }
+
+      const updatedSubscription = await this.subscriptionService.reactivateSubscription(subscription._id);
       res.status(200).json(updatedSubscription);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import { User, Organization } from './models';
-import { UserRole } from './types';
+import { User, Organization, Plan, Subscription } from './models';
+import { UserRole, BillingInterval, SubscriptionStatus } from './types';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -13,7 +13,35 @@ const seedDatabase = async () => {
     // Clear existing data
     await User.deleteMany({});
     await Organization.deleteMany({});
+    await Plan.deleteMany({});
+    await Subscription.deleteMany({});
     console.log('Cleared existing data');
+
+    // Create default plans: Starter and Premium (with unlimited member limit)
+    const starterPlan = await Plan.create({
+      name: 'Starter Plan',
+      price: 29.0,
+      billingInterval: BillingInterval.MONTHLY,
+      features: ['Up to 5 team members', 'Basic analytics', 'Standard support'],
+      isActive: true,
+    });
+
+    const premiumPlan = await Plan.create({
+      name: 'Premium Plan',
+      price: 99.0,
+      billingInterval: BillingInterval.MONTHLY,
+      features: ['Unlimited team members', 'Advanced telemetry', '24/7 priority support', 'Unlimited seat quota'],
+      isActive: true,
+    });
+
+    const enterprisePlan = await Plan.create({
+      name: 'Enterprise Plan',
+      price: 299.0,
+      billingInterval: BillingInterval.YEARLY,
+      features: ['Unlimited team members', 'Dedicated account manager', 'Custom integrations', '99.9% uptime SLA'],
+      isActive: true,
+    });
+    console.log('✓ Created Plans: Starter Plan, Premium Plan (Unlimited Members), Enterprise Plan');
 
     // Create Platform Admin
     const platformAdmin = new User({
@@ -34,6 +62,20 @@ const seedDatabase = async () => {
     });
     await organization.save();
     console.log('✓ Created Organization: Test Organization');
+
+    // Create active subscription for the organization on Premium Plan
+    const periodStart = new Date();
+    const periodEnd = new Date(periodStart);
+    periodEnd.setDate(periodEnd.getDate() + 30);
+    await Subscription.create({
+      organizationId: organization._id,
+      planId: premiumPlan._id,
+      status: SubscriptionStatus.ACTIVE,
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
+      cancelAtPeriodEnd: false,
+    });
+    console.log('✓ Created Active Subscription: Premium Plan (Unlimited Member Limit)');
 
     // Create Organization Admin
     const orgAdmin = new User({

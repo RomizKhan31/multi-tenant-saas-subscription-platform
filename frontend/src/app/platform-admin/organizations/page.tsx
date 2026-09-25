@@ -228,7 +228,7 @@ export default function PlatformAdminOrganizationsPage() {
                     <th className="px-5 py-3.5">Subscription Plan</th>
                     <th className="px-5 py-3.5">Members</th>
                     <th className="px-5 py-3.5">Status</th>
-                    <th className="px-5 py-3.5">Joined Date</th>
+                    <th className="px-5 py-3.5">Signup Date</th>
                     <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>

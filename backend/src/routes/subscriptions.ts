@@ -12,6 +12,7 @@ export const createSubscriptionRoutes = (subscriptionController: SubscriptionCon
   router.post('/upgrade', requireAuth, requireOrganizationAccess, requireRole([UserRole.ORGANIZATION_ADMIN]), subscriptionController.upgradeSubscription);
   router.post('/downgrade', requireAuth, requireOrganizationAccess, requireRole([UserRole.ORGANIZATION_ADMIN]), subscriptionController.downgradeSubscription);
   router.post('/cancel', requireAuth, requireOrganizationAccess, requireRole([UserRole.ORGANIZATION_ADMIN]), subscriptionController.cancelSubscription);
+  router.post('/reactivate', requireAuth, requireOrganizationAccess, requireRole([UserRole.ORGANIZATION_ADMIN]), subscriptionController.reactivateSubscription);
 
   // Platform admin
   router.get('/all', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), subscriptionController.getSubscriptions);

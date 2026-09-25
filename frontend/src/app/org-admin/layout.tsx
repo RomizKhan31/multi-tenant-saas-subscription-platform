@@ -25,8 +25,8 @@ const orgAdminNavItems: NavItem[] = [
     icon: Users,
   },
   {
-    label: 'Plans & Billing',
-    href: '/org-admin/plans',
+    label: 'Subscription & Plans',
+    href: '/org-admin/subscription',
     icon: CreditCard,
   },
   {

@@ -80,10 +80,12 @@ export class PaymentService {
       sessionUrl = session.url || '';
     }
 
-    // Create pending payment record
+    // Create pending payment record with planId so the target upgrade/downgrade plan
+    // is reliably tracked and activated upon checkout completion.
     await this.paymentRepository.create({
       organizationId,
       subscriptionId: subscription._id,
+      planId: plan._id,
       amount: plan.price,
       currency: 'usd',
       status: PaymentStatus.PENDING,
