@@ -68,8 +68,8 @@ export default function OrgAdminSettingsPage() {
           role="status"
           className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium ${
             notice.type === 'success'
-              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border border-rose-200 text-rose-800'
           }`}
         >
           <span>{notice.message}</span>
@@ -80,14 +80,14 @@ export default function OrgAdminSettingsPage() {
       )}
 
       <QueryState loading={organization.isLoading} error={organization.error}>
-        <section className="rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm max-w-2xl">
-          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-800 mb-6">
-            <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm max-w-2xl">
+          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 mb-6">
+            <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
               <Building2 size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-white text-base">Company Profile</h2>
-              <p className="text-xs text-slate-400">Public and billing details for this tenant.</p>
+              <h2 className="font-bold text-slate-900 text-base">Company Profile</h2>
+              <p className="text-xs text-slate-500">Public and billing details for this tenant.</p>
             </div>
           </div>
 
@@ -99,19 +99,19 @@ export default function OrgAdminSettingsPage() {
             className="space-y-4"
           >
             <div>
-              <label className="text-xs font-semibold text-slate-300 uppercase">
+              <label className="text-xs font-semibold text-slate-700 uppercase">
                 Organization Name
               </label>
               <input
                 required
                 value={profile.name}
                 onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-300 uppercase">
+              <label className="text-xs font-semibold text-slate-700 uppercase">
                 Primary Contact Email
               </label>
               <input
@@ -119,12 +119,12 @@ export default function OrgAdminSettingsPage() {
                 placeholder="contact@company.com"
                 value={profile.contactEmail}
                 onChange={(e) => setProfile({ ...profile, contactEmail: e.target.value })}
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-300 uppercase">
+              <label className="text-xs font-semibold text-slate-700 uppercase">
                 Billing & Invoice Email
               </label>
               <input
@@ -132,7 +132,7 @@ export default function OrgAdminSettingsPage() {
                 placeholder="billing@company.com"
                 value={profile.billingEmail}
                 onChange={(e) => setProfile({ ...profile, billingEmail: e.target.value })}
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
               />
               <p className="mt-1 text-[11px] text-slate-500">
                 Stripe receipts and automated invoices are sent to this address.
@@ -143,7 +143,7 @@ export default function OrgAdminSettingsPage() {
               <button
                 type="submit"
                 disabled={saveProfile.isPending}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-bold shadow-lg shadow-emerald-500/20 transition active:scale-95 disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm hover:shadow transition active:scale-95 disabled:opacity-50"
               >
                 <Save size={16} />
                 <span>{saveProfile.isPending ? 'Saving...' : 'Save Changes'}</span>

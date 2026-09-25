@@ -99,7 +99,7 @@ export default function OrgAdminMembersPage() {
           <button
             type="button"
             onClick={() => setShowInviteModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-bold shadow-lg shadow-emerald-500/20 transition active:scale-95"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm hover:shadow transition active:scale-95"
           >
             <UserPlus size={16} />
             <span>Invite Member</span>
@@ -112,8 +112,8 @@ export default function OrgAdminMembersPage() {
           role="status"
           className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium ${
             notice.type === 'success'
-              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border border-rose-200 text-rose-800'
           }`}
         >
           <span>{notice.message}</span>
@@ -125,19 +125,19 @@ export default function OrgAdminMembersPage() {
 
       {/* Invite Member Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md rounded-2xl border border-slate-800 bg-[#0e1629] p-6 text-slate-100 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                <div className="grid size-8 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
                   <UserPlus size={16} />
                 </div>
-                <h3 className="text-base font-bold text-white">Invite Team Member</h3>
+                <h3 className="text-base font-bold text-slate-900">Invite Team Member</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowInviteModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-slate-700"
               >
                 <X size={18} />
               </button>
@@ -151,30 +151,30 @@ export default function OrgAdminMembersPage() {
               className="space-y-4"
             >
               <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase">
+                <label className="text-xs font-semibold text-slate-700 uppercase">
                   Email Address
                 </label>
                 <div className="relative mt-1">
-                  <Mail className="absolute left-3.5 top-3 text-slate-500" size={15} />
+                  <Mail className="absolute left-3.5 top-3 text-slate-400" size={15} />
                   <input
                     required
                     type="email"
                     placeholder="colleague@company.com"
                     value={invite.email}
                     onChange={(e) => setInvite({ ...invite, email: e.target.value })}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900/80 py-2.5 pl-9 pr-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                    className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase">
+                <label className="text-xs font-semibold text-slate-700 uppercase">
                   Role Assignment
                 </label>
                 <select
                   value={invite.role}
                   onChange={(e) => setInvite({ ...invite, role: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-600"
                 >
                   <option value="ORGANIZATION_MEMBER">Member (Standard Workspace Access)</option>
                   <option value="ORGANIZATION_ADMIN">Admin (Billing & User Management)</option>
@@ -185,14 +185,14 @@ export default function OrgAdminMembersPage() {
                 <button
                   type="button"
                   onClick={() => setShowInviteModal(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition"
+                  className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={inviteMember.isPending}
-                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 transition disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-sm hover:shadow transition disabled:opacity-50"
                 >
                   {inviteMember.isPending ? 'Sending...' : 'Send Invitation'}
                 </button>
@@ -203,14 +203,14 @@ export default function OrgAdminMembersPage() {
       )}
 
       {/* Members Table */}
-      <section className="rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm overflow-hidden">
-        <div className="flex items-center gap-2.5 pb-4 border-b border-slate-800 mb-5">
-          <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 mb-5">
+          <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
             <Users size={18} />
           </div>
           <div>
-            <h2 className="font-bold text-white text-base">Active Roster</h2>
-            <p className="text-xs text-slate-400">Members with verified or pending credentials.</p>
+            <h2 className="font-bold text-slate-900 text-base">Active Roster</h2>
+            <p className="text-xs text-slate-500">Members with verified or pending credentials.</p>
           </div>
         </div>
 
@@ -222,7 +222,7 @@ export default function OrgAdminMembersPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-slate-900/80 border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-semibold">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider font-semibold">
                   <tr>
                     <th className="px-5 py-3.5">Name</th>
                     <th className="px-5 py-3.5">Email</th>
@@ -232,13 +232,13 @@ export default function OrgAdminMembersPage() {
                     <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-slate-100">
                   {members.data.map((member) => (
-                    <tr key={member._id} className="hover:bg-slate-800/40 transition">
-                      <td className="px-5 py-4 font-bold text-white">
+                    <tr key={member._id} className="hover:bg-slate-50/70 transition">
+                      <td className="px-5 py-4 font-bold text-slate-900">
                         {member.name || 'Invited User'}
                       </td>
-                      <td className="px-5 py-4 text-slate-300 font-mono text-xs">
+                      <td className="px-5 py-4 text-slate-600 font-mono text-xs">
                         {member.email}
                       </td>
                       <td className="px-5 py-4">
@@ -247,7 +247,7 @@ export default function OrgAdminMembersPage() {
                           onChange={(e) =>
                             updateMemberRole.mutate({ id: member._id, role: e.target.value })
                           }
-                          className="rounded-lg border border-slate-700 bg-slate-900/90 px-2.5 py-1 text-xs text-emerald-400 font-semibold focus:outline-none focus:border-emerald-500"
+                          className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs text-indigo-700 font-semibold focus:outline-none focus:border-indigo-600"
                         >
                           <option value="ORGANIZATION_ADMIN">Admin</option>
                           <option value="ORGANIZATION_MEMBER">Member</option>
@@ -256,7 +256,7 @@ export default function OrgAdminMembersPage() {
                       <td className="px-5 py-4">
                         <StatusBadge value={member.status} />
                       </td>
-                      <td className="px-5 py-4 text-slate-400 text-xs">
+                      <td className="px-5 py-4 text-slate-500 text-xs">
                         {formatDate(member.createdAt)}
                       </td>
                       <td className="px-5 py-4 text-right">
@@ -268,7 +268,7 @@ export default function OrgAdminMembersPage() {
                             }
                           }}
                           disabled={removeMember.isPending}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
                           title="Remove member"
                         >
                           <Trash2 size={16} />

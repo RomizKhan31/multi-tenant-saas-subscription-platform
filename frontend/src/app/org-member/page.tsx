@@ -36,7 +36,7 @@ export default function OrgMemberDashboardPage() {
             value={organization.data?.name || 'Workspace'}
             detail="Current affiliated tenant"
             icon={<Building2 size={20} />}
-            iconColor="emerald"
+            iconColor="indigo"
           />
           <StatCard
             label="Workspace Plan"
@@ -58,18 +58,18 @@ export default function OrgMemberDashboardPage() {
         <div className="grid gap-6 md:grid-cols-3">
           <Link
             href="/org-member/organization"
-            className="group rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm hover:border-slate-700 transition flex flex-col justify-between"
+            className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:border-slate-300 hover:shadow-md transition flex flex-col justify-between"
           >
             <div>
-              <div className="grid size-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/20 transition">
+              <div className="grid size-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition">
                 <Building2 size={20} />
               </div>
-              <h3 className="font-bold text-white text-base mt-4">Organization Profile</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="font-bold text-slate-900 text-base mt-4">Organization Profile</h3>
+              <p className="text-xs text-slate-500 mt-1">
                 View public details and verified membership status for {organization.data?.name || 'your workspace'}.
               </p>
             </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+            <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-indigo-600">
               <span>View details</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
@@ -77,18 +77,18 @@ export default function OrgMemberDashboardPage() {
 
           <Link
             href="/org-member/profile"
-            className="group rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm hover:border-slate-700 transition flex flex-col justify-between"
+            className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:border-slate-300 hover:shadow-md transition flex flex-col justify-between"
           >
             <div>
-              <div className="grid size-10 place-items-center rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:bg-cyan-500/20 transition">
+              <div className="grid size-10 place-items-center rounded-xl bg-sky-50 text-sky-600 group-hover:bg-sky-100 transition">
                 <User size={20} />
               </div>
-              <h3 className="font-bold text-white text-base mt-4">Personal Profile</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="font-bold text-slate-900 text-base mt-4">Personal Profile</h3>
+              <p className="text-xs text-slate-500 mt-1">
                 Keep your display name and email address up-to-date.
               </p>
             </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-cyan-400">
+            <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-sky-600">
               <span>Edit profile</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
@@ -96,18 +96,18 @@ export default function OrgMemberDashboardPage() {
 
           <Link
             href="/org-member/security"
-            className="group rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm hover:border-slate-700 transition flex flex-col justify-between"
+            className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:border-slate-300 hover:shadow-md transition flex flex-col justify-between"
           >
             <div>
-              <div className="grid size-10 place-items-center rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500/20 transition">
+              <div className="grid size-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition">
                 <KeyRound size={20} />
               </div>
-              <h3 className="font-bold text-white text-base mt-4">Password & Security</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="font-bold text-slate-900 text-base mt-4">Password & Security</h3>
+              <p className="text-xs text-slate-500 mt-1">
                 Update your account password and review login credentials.
               </p>
             </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-indigo-400">
+            <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-indigo-600">
               <span>Manage password</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>

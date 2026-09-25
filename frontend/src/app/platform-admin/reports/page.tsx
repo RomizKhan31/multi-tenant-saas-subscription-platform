@@ -106,14 +106,14 @@ export default function PlatformAdminReportsPage() {
         </div>
 
         {/* Summary Card */}
-        <div className="rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm">
-          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-800 mb-5">
-            <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 mb-5">
+            <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
               <BarChart3 size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-white text-base">Plan Subscription Overview</h2>
-              <p className="text-xs text-slate-400">Active tenant subscriptions by pricing tier.</p>
+              <h2 className="font-bold text-slate-900 text-base">Plan Subscription Overview</h2>
+              <p className="text-xs text-slate-500">Active tenant subscriptions by pricing tier.</p>
             </div>
           </div>
 
@@ -125,15 +125,15 @@ export default function PlatformAdminReportsPage() {
               return (
                 <div
                   key={p._id}
-                  className="p-4 rounded-xl border border-slate-800 bg-slate-900/60 flex items-center justify-between"
+                  className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between hover:bg-slate-50 transition"
                 >
                   <div>
-                    <p className="font-bold text-white text-sm">{p.name}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="font-bold text-slate-900 text-sm">{p.name}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {formatCurrency(p.price)} · {assigned} active subscribers
                     </p>
                   </div>
-                  <span className="text-sm font-bold text-emerald-400">
+                  <span className="text-sm font-bold text-indigo-600">
                     {assigned} active {assigned === 1 ? 'subscription' : 'subscriptions'}
                   </span>
                 </div>

@@ -41,8 +41,8 @@ export default function OrgMemberSecurityPage() {
           role="status"
           className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium ${
             notice.type === 'success'
-              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border border-rose-200 text-rose-800'
           }`}
         >
           <span>{notice.message}</span>
@@ -52,14 +52,14 @@ export default function OrgMemberSecurityPage() {
         </div>
       )}
 
-      <section className="rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm max-w-xl">
-        <div className="flex items-center gap-2.5 pb-4 border-b border-slate-800 mb-6">
-          <div className="grid size-9 place-items-center rounded-xl bg-indigo-500/10 text-indigo-400">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs max-w-xl">
+        <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 mb-6">
+          <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
             <KeyRound size={18} />
           </div>
           <div>
-            <h2 className="font-bold text-white text-base">Change Password</h2>
-            <p className="text-xs text-slate-400">Use at least 8 characters including numbers.</p>
+            <h2 className="font-bold text-slate-900 text-base">Change Password</h2>
+            <p className="text-xs text-slate-500">Use at least 8 characters including numbers.</p>
           </div>
         </div>
 
@@ -71,11 +71,11 @@ export default function OrgMemberSecurityPage() {
           className="space-y-4"
         >
           <div>
-            <label className="text-xs font-semibold text-slate-300 uppercase">
+            <label className="text-xs font-semibold text-slate-700 uppercase">
               Current Password
             </label>
             <div className="relative mt-1.5">
-              <Lock className="absolute left-3.5 top-3 text-slate-500" size={15} />
+              <Lock className="absolute left-3.5 top-3 text-slate-400" size={15} />
               <input
                 required
                 type="password"
@@ -84,17 +84,17 @@ export default function OrgMemberSecurityPage() {
                 onChange={(e) =>
                   setPassword({ ...password, currentPassword: e.target.value })
                 }
-                className="w-full rounded-xl border border-slate-700 bg-slate-900/80 py-2.5 pl-9 pr-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-300 uppercase">
+            <label className="text-xs font-semibold text-slate-700 uppercase">
               New Password
             </label>
             <div className="relative mt-1.5">
-              <Lock className="absolute left-3.5 top-3 text-slate-500" size={15} />
+              <Lock className="absolute left-3.5 top-3 text-slate-400" size={15} />
               <input
                 required
                 minLength={8}
@@ -104,7 +104,7 @@ export default function OrgMemberSecurityPage() {
                 onChange={(e) =>
                   setPassword({ ...password, newPassword: e.target.value })
                 }
-                className="w-full rounded-xl border border-slate-700 bg-slate-900/80 py-2.5 pl-9 pr-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
               />
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function OrgMemberSecurityPage() {
             <button
               type="submit"
               disabled={passwordMutation.isPending}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-bold shadow-lg shadow-emerald-500/20 transition active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-xs transition active:scale-95 disabled:opacity-50"
             >
               <ShieldCheck size={16} />
               <span>{passwordMutation.isPending ? 'Updating...' : 'Update Password'}</span>

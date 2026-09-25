@@ -47,20 +47,20 @@ export default function PlatformAdminSubscriptionsPage() {
         title="Tenant Subscriptions"
         subtitle="Cross-tenant subscription lifecycles, billing renewal dates, and plan assignments."
         badge={
-          <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
+          <span className="rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 text-xs font-bold text-indigo-700">
             {subscriptions.data?.length ?? 0} Total Records
           </span>
         }
       />
 
-      <section className="rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm overflow-hidden">
-        <div className="flex items-center gap-2.5 pb-4 border-b border-slate-800 mb-5">
-          <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 mb-5">
+          <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
             <Layers size={18} />
           </div>
           <div>
-            <h2 className="font-bold text-white text-base">All Subscriptions</h2>
-            <p className="text-xs text-slate-400">Active and past subscription records for all organizations.</p>
+            <h2 className="font-bold text-slate-900 text-base">All Subscriptions</h2>
+            <p className="text-xs text-slate-500">Active and past subscription records for all organizations.</p>
           </div>
         </div>
 
@@ -75,7 +75,7 @@ export default function PlatformAdminSubscriptionsPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-slate-900/80 border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-semibold">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider font-semibold">
                   <tr>
                     <th className="px-5 py-3.5">Organization</th>
                     <th className="px-5 py-3.5">Assigned Plan</th>
@@ -85,32 +85,32 @@ export default function PlatformAdminSubscriptionsPage() {
                     <th className="px-5 py-3.5">Current Period End</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-slate-100">
                   {subscriptions.data.map((sub) => {
                     const org = organizations.data?.find((o) => o._id === sub.organizationId);
                     const plan = plans.data?.find((p) => p._id === sub.planId);
 
                     return (
-                      <tr key={sub._id} className="hover:bg-slate-800/40 transition">
-                        <td className="px-5 py-4 font-bold text-white">
+                      <tr key={sub._id} className="hover:bg-slate-50/70 transition">
+                        <td className="px-5 py-4 font-bold text-slate-900">
                           {org?.name || sub.organizationId}
                         </td>
-                        <td className="px-5 py-4 text-slate-200 font-medium">
+                        <td className="px-5 py-4 text-slate-700 font-medium">
                           {plan?.name || 'Custom Plan'}
                         </td>
-                        <td className="px-5 py-4 text-slate-400">
+                        <td className="px-5 py-4 text-slate-500">
                           {plan ? `${formatCurrency(plan.price)} / ${plan.billingInterval.toLowerCase()}` : '—'}
                         </td>
                         <td className="px-5 py-4">
                           <StatusBadge value={sub.status} />
                           {sub.cancelAtPeriodEnd && (
-                            <span className="block text-[11px] text-amber-400 mt-1">Cancels at end</span>
+                            <span className="block text-[11px] text-amber-600 font-medium mt-1">Cancels at end</span>
                           )}
                         </td>
-                        <td className="px-5 py-4 text-slate-400">
+                        <td className="px-5 py-4 text-slate-500">
                           {formatDate(sub.createdAt)}
                         </td>
-                        <td className="px-5 py-4 text-slate-300">
+                        <td className="px-5 py-4 text-slate-700">
                           {sub.currentPeriodEnd ? formatDate(sub.currentPeriodEnd) : 'Ongoing'}
                         </td>
                       </tr>

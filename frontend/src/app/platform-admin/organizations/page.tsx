@@ -145,7 +145,7 @@ export default function PlatformAdminOrganizationsPage() {
         title="Organizations Directory"
         subtitle="Search, inspect tenant profiles, review member quotas, and control tenant access permissions."
         badge={
-          <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
+          <span className="rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 text-xs font-bold text-indigo-700">
             {organizations.data?.length ?? 0} Tenants
           </span>
         }
@@ -156,8 +156,8 @@ export default function PlatformAdminOrganizationsPage() {
           role="status"
           className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium ${
             notice.type === 'success'
-              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border border-rose-200 text-rose-800'
           }`}
         >
           <span>{notice.message}</span>
@@ -168,16 +168,16 @@ export default function PlatformAdminOrganizationsPage() {
       )}
 
       {/* Main Organizations Card */}
-      <section className="rounded-2xl border border-slate-800 bg-[#0e1629] shadow-sm overflow-hidden">
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         {/* Filters Header */}
-        <div className="flex flex-col gap-4 border-b border-slate-800 p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 border-b border-slate-100 p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400">
+            <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
               <Building2 size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-white text-base">Active Organizations</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="font-bold text-slate-900 text-base">Active Organizations</h2>
+              <p className="text-xs text-slate-500">
                 Live multi-tenant accounts registered on this platform.
               </p>
             </div>
@@ -186,7 +186,7 @@ export default function PlatformAdminOrganizationsPage() {
           <div className="flex flex-col gap-2.5 sm:flex-row">
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-3.5 top-2.5 text-slate-500"
+                className="pointer-events-none absolute left-3.5 top-2.5 text-slate-400"
                 size={16}
               />
               <input
@@ -194,7 +194,7 @@ export default function PlatformAdminOrganizationsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search organizations..."
-                className="w-full sm:w-64 rounded-xl border border-slate-700/80 bg-slate-900/80 py-2 pl-9 pr-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                className="w-full sm:w-64 rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
               />
             </div>
 
@@ -202,7 +202,7 @@ export default function PlatformAdminOrganizationsPage() {
               aria-label="Filter organization status"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="rounded-xl border border-slate-700/80 bg-slate-900/80 px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+              className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:border-indigo-600"
             >
               <option value="">All statuses</option>
               <option value="ACTIVE">ACTIVE</option>
@@ -222,7 +222,7 @@ export default function PlatformAdminOrganizationsPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-slate-900/80 border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-semibold">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider font-semibold">
                   <tr>
                     <th className="px-5 py-3.5">Organization</th>
                     <th className="px-5 py-3.5">Subscription Plan</th>
@@ -232,7 +232,7 @@ export default function PlatformAdminOrganizationsPage() {
                     <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-slate-100">
                   {organizations.data.map((organization) => {
                     const subscription = subscriptions.data?.find(
                       (item) => item.organizationId === organization._id
@@ -240,31 +240,31 @@ export default function PlatformAdminOrganizationsPage() {
                     const plan = plans.data?.find((item) => item._id === subscription?.planId);
 
                     return (
-                      <tr key={organization._id} className="hover:bg-slate-800/40 transition">
-                        <td className="px-5 py-4 font-bold text-white">
+                      <tr key={organization._id} className="hover:bg-slate-50/70 transition">
+                        <td className="px-5 py-4 font-bold text-slate-900">
                           {organization.name}
                         </td>
-                        <td className="px-5 py-4 text-slate-300">
+                        <td className="px-5 py-4 text-slate-600">
                           {plan?.name ? (
-                            <span className="font-semibold text-slate-200">{plan.name}</span>
+                            <span className="font-semibold text-slate-800">{plan.name}</span>
                           ) : (
-                            <span className="text-xs text-slate-500 italic">No plan assigned</span>
+                            <span className="text-xs text-slate-400 italic">No plan assigned</span>
                           )}
                         </td>
-                        <td className="px-5 py-4 text-slate-400">
+                        <td className="px-5 py-4 text-slate-600">
                           {memberCounts.data?.[organization._id] ?? '—'}
                         </td>
                         <td className="px-5 py-4">
                           <StatusBadge value={organization.status} />
                         </td>
-                        <td className="px-5 py-4 text-slate-400">
+                        <td className="px-5 py-4 text-slate-500">
                           {formatDate(organization.createdAt)}
                         </td>
                         <td className="px-5 py-4 text-right space-x-3 whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => setSelectedOrgId(organization._id)}
-                            className="inline-flex items-center gap-1 font-semibold text-emerald-400 hover:text-emerald-300 transition"
+                            className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-700 transition"
                           >
                             <Eye size={15} /> Details
                           </button>
@@ -279,7 +279,7 @@ export default function PlatformAdminOrganizationsPage() {
                                 })
                               }
                               disabled={organizationAction.isPending}
-                              className="font-semibold text-emerald-400 hover:text-emerald-300 transition disabled:opacity-50"
+                              className="font-semibold text-emerald-600 hover:text-emerald-700 transition disabled:opacity-50"
                             >
                               Reactivate
                             </button>
@@ -299,7 +299,7 @@ export default function PlatformAdminOrganizationsPage() {
                                 }
                               }}
                               disabled={organizationAction.isPending}
-                              className="font-semibold text-rose-400 hover:text-rose-300 transition disabled:opacity-50"
+                              className="font-semibold text-rose-600 hover:text-rose-700 transition disabled:opacity-50"
                             >
                               Suspend
                             </button>
@@ -317,36 +317,36 @@ export default function PlatformAdminOrganizationsPage() {
 
       {/* Organization Detail Modal */}
       {selectedOrgId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-800 bg-[#0e1629] p-6 text-slate-100 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <div>
-                <h3 className="text-xl font-bold text-white">
+                <h3 className="text-xl font-bold text-slate-900">
                   {orgDetails.data?.organization?.name || 'Organization Details'}
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   Tenant configuration, member roster, subscription history, and payment transactions
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedOrgId(null)}
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
               >
                 <X size={20} />
               </button>
             </div>
 
             {orgDetails.isLoading ? (
-              <div className="py-12 text-center text-slate-400 text-sm">
+              <div className="py-12 text-center text-slate-500 text-sm">
                 Loading organization profile...
               </div>
             ) : orgDetails.data ? (
               <div className="space-y-6">
                 {/* Status & Profile Strip */}
-                <div className="grid gap-4 sm:grid-cols-3 bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+                <div className="grid gap-4 sm:grid-cols-3 bg-slate-50 border border-slate-200 p-4 rounded-xl">
                   <div>
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                       Status
                     </span>
                     <div className="mt-1">
@@ -354,18 +354,18 @@ export default function PlatformAdminOrganizationsPage() {
                     </div>
                   </div>
                   <div>
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                       Signup Date
                     </span>
-                    <p className="text-sm font-semibold text-slate-200 mt-1">
+                    <p className="text-sm font-semibold text-slate-800 mt-1">
                       {formatDate(orgDetails.data.organization.createdAt)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                       Tenant ID
                     </span>
-                    <p className="text-xs font-mono text-slate-300 mt-1 truncate">
+                    <p className="text-xs font-mono text-slate-700 mt-1 truncate">
                       {orgDetails.data.organization._id}
                     </p>
                   </div>
@@ -373,21 +373,21 @@ export default function PlatformAdminOrganizationsPage() {
 
                 {/* Team Members */}
                 <div>
-                  <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                    <Users size={16} className="text-emerald-400" /> Members (
+                  <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+                    <Users size={16} className="text-indigo-600" /> Members (
                     {orgDetails.data.members?.length || 0})
                   </h4>
-                  <div className="divide-y divide-slate-800 border border-slate-800 rounded-xl overflow-hidden bg-slate-900/50">
+                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
                     {orgDetails.data.members?.map((m) => (
                       <div
                         key={m._id}
                         className="p-3 flex items-center justify-between text-xs sm:text-sm"
                       >
                         <div>
-                          <span className="font-semibold text-slate-100">{m.name}</span>
-                          <span className="text-slate-400 ml-2">({m.email})</span>
+                          <span className="font-semibold text-slate-900">{m.name}</span>
+                          <span className="text-slate-500 ml-2">({m.email})</span>
                         </div>
-                        <span className="font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-xs">
+                        <span className="font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded text-xs">
                           {m.role}
                         </span>
                       </div>
@@ -400,20 +400,20 @@ export default function PlatformAdminOrganizationsPage() {
 
                 {/* Subscription History */}
                 <div>
-                  <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                    <Receipt size={16} className="text-emerald-400" /> Subscription History
+                  <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+                    <Receipt size={16} className="text-indigo-600" /> Subscription History
                   </h4>
-                  <div className="divide-y divide-slate-800 border border-slate-800 rounded-xl overflow-hidden bg-slate-900/50">
+                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
                     {orgDetails.data.subscriptions?.map((s) => (
                       <div
                         key={s._id}
                         className="p-3 flex items-center justify-between text-xs sm:text-sm"
                       >
                         <div>
-                          <span className="font-semibold text-slate-200">
+                          <span className="font-semibold text-slate-800">
                             {plans.data?.find((p) => p._id === s.planId)?.name || 'Subscription'}
                           </span>
-                          <span className="text-slate-400 ml-2">Created {formatDate(s.createdAt)}</span>
+                          <span className="text-slate-500 ml-2">Created {formatDate(s.createdAt)}</span>
                         </div>
                         <StatusBadge value={s.status} />
                       </div>
@@ -427,28 +427,28 @@ export default function PlatformAdminOrganizationsPage() {
                 {/* Payments & Transactions */}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                      <CreditCard size={16} className="text-emerald-400" /> Payments (
+                    <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+                      <CreditCard size={16} className="text-indigo-600" /> Payments (
                       {orgDetails.data.payments?.length || 0})
                     </h4>
-                    <div className="divide-y divide-slate-800 border border-slate-800 rounded-xl max-h-48 overflow-y-auto bg-slate-900/50">
+                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl max-h-48 overflow-y-auto bg-white shadow-sm">
                       {orgDetails.data.payments?.map((p) => (
                         <div
                           key={p._id}
                           className="p-3 flex items-center justify-between text-xs"
                         >
                           <div>
-                            <span className="font-semibold text-white">
+                            <span className="font-semibold text-slate-900">
                               {formatCurrency(p.amount, p.currency.toUpperCase())}
                             </span>
-                            <span className="text-slate-400 ml-1.5">· {formatDate(p.createdAt)}</span>
+                            <span className="text-slate-500 ml-1.5">· {formatDate(p.createdAt)}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <StatusBadge value={p.status} />
                             <button
                               type="button"
                               onClick={() => handleViewInvoice(p._id)}
-                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded transition"
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded transition"
                             >
                               <Download size={11} /> Invoice
                             </button>
@@ -462,21 +462,21 @@ export default function PlatformAdminOrganizationsPage() {
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                      <History size={16} className="text-emerald-400" /> Transactions (
+                    <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+                      <History size={16} className="text-indigo-600" /> Transactions (
                       {orgDetails.data.transactions?.length || 0})
                     </h4>
-                    <div className="divide-y divide-slate-800 border border-slate-800 rounded-xl max-h-48 overflow-y-auto bg-slate-900/50">
+                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl max-h-48 overflow-y-auto bg-white shadow-sm">
                       {orgDetails.data.transactions?.map((t) => (
                         <div
                           key={t._id}
                           className="p-3 flex items-center justify-between text-xs"
                         >
                           <div>
-                            <span className="font-semibold text-white">
+                            <span className="font-semibold text-slate-900">
                               {formatCurrency(t.amount, t.currency.toUpperCase())}
                             </span>
-                            <span className="text-slate-400 ml-1.5">· {formatDate(t.createdAt)}</span>
+                            <span className="text-slate-500 ml-1.5">· {formatDate(t.createdAt)}</span>
                           </div>
                           <StatusBadge value={t.status} />
                         </div>
@@ -489,7 +489,7 @@ export default function PlatformAdminOrganizationsPage() {
                 </div>
               </div>
             ) : (
-              <div className="py-6 text-center text-rose-400 text-sm">
+              <div className="py-6 text-center text-rose-600 text-sm">
                 Could not load organization details.
               </div>
             )}

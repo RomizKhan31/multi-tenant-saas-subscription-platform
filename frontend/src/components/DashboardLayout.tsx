@@ -51,9 +51,9 @@ export function DashboardLayout({
 
   if (loading || isUnauthorized) {
     return (
-      <div className="min-h-screen bg-[#070b14] flex flex-col items-center justify-center gap-3">
-        <Loader2 className="animate-spin text-emerald-400" size={32} />
-        <p className="text-xs text-slate-400">Verifying credentials...</p>
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="animate-spin text-indigo-600" size={32} />
+        <p className="text-xs font-medium text-slate-500">Verifying credentials...</p>
       </div>
     );
   }
@@ -82,23 +82,26 @@ export function DashboardLayout({
     <div className="flex h-full flex-col justify-between p-4">
       {/* Brand Header */}
       <div>
-        <div className="flex items-center justify-between pb-6 pt-2 px-2 border-b border-slate-800/80">
+        <div className="flex items-center justify-between pb-6 pt-2 px-2 border-b border-[#192b47]">
           <Link href={navItems[0]?.href || '/'} className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-slate-950 font-black shadow-lg shadow-emerald-500/20">
-              <Layers size={20} />
+            <div className="grid size-9 place-items-center rounded-xl bg-indigo-600 text-white font-black shadow-md shadow-indigo-600/30">
+              <span className="text-base font-black">O</span>
             </div>
-            <span className="font-bold tracking-tight text-white text-base truncate max-w-[130px]">
-              {brandTitle}
-            </span>
+            <div className="min-w-0">
+              <span className="block font-bold tracking-tight text-white text-sm truncate max-w-[130px]">
+                {brandTitle}
+              </span>
+              <span className="block text-[11px] text-slate-400 truncate">SaaS Platform</span>
+            </div>
           </Link>
 
-          <div className="flex items-center gap-1.5 rounded-full border border-slate-700/80 bg-slate-800/60 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
-            <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="flex items-center gap-1.5 rounded-full border border-[#22385e] bg-[#162744] px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+            <span className="size-1.5 rounded-full bg-indigo-400 animate-pulse" />
             <span>{brandBadge}</span>
           </div>
         </div>
 
-        {/* Navigation List */}
+        {/* Navigation List - Follows Image 2 colors and style */}
         <nav className="mt-5 space-y-1.5">
           {navItems.map((item) => {
             const active = isLinkActive(item.href);
@@ -111,8 +114,8 @@ export function DashboardLayout({
                 onClick={() => setMobileMenuOpen(false)}
                 className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   active
-                    ? 'bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 shadow-sm shadow-emerald-500/10'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                    ? 'bg-[#1c4b95] text-white shadow-sm font-semibold'
+                    : 'text-slate-300 hover:text-white hover:bg-[#162744] border border-transparent'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -120,8 +123,8 @@ export function DashboardLayout({
                     size={18}
                     className={
                       active
-                        ? 'text-emerald-400'
-                        : 'text-slate-400 group-hover:text-slate-200 transition-colors'
+                        ? 'text-white'
+                        : 'text-slate-400 group-hover:text-white transition-colors'
                     }
                   />
                   <span className="truncate">{item.label}</span>
@@ -129,11 +132,17 @@ export function DashboardLayout({
 
                 <div className="flex items-center gap-2">
                   {item.badge !== undefined && (
-                    <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-bold text-emerald-400">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                        active
+                          ? 'bg-white/20 text-white'
+                          : 'bg-[#1c2e4a] text-slate-300'
+                      }`}
+                    >
                       {item.badge}
                     </span>
                   )}
-                  {active && <ChevronRight size={15} className="text-emerald-400" />}
+                  {active && <ChevronRight size={15} className="text-white/80" />}
                 </div>
               </Link>
             );
@@ -142,13 +151,13 @@ export function DashboardLayout({
       </div>
 
       {/* User Card & Sign Out at bottom */}
-      <div className="pt-4 border-t border-slate-800/80">
-        <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-900/60 border border-slate-800/60">
-          <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-950 border border-emerald-500/40 text-emerald-400 font-bold text-sm">
+      <div className="pt-4 border-t border-[#192b47]">
+        <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#12233f] border border-[#1d3356]">
+          <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#1c4b95] text-white font-bold text-sm shadow-sm">
             {userInitial}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-slate-100 text-sm truncate">
+            <p className="font-semibold text-white text-sm truncate">
               {user?.name || 'Romiz'}
             </p>
             <p className="text-xs text-slate-400 truncate">{roleDisplay}</p>
@@ -168,33 +177,33 @@ export function DashboardLayout({
   );
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col lg:flex-row font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
-      {/* Desktop Persistent Sidebar */}
-      <aside className="hidden lg:flex w-64 xl:w-72 shrink-0 flex-col border-r border-slate-800/80 bg-[#0d1527] sticky top-0 h-screen overflow-y-auto">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col lg:flex-row font-sans selection:bg-indigo-500/20 selection:text-indigo-700">
+      {/* Desktop Persistent Sidebar - Image 2 Style */}
+      <aside className="hidden lg:flex w-64 xl:w-72 shrink-0 flex-col border-r border-[#192b47] bg-[#0e1f38] sticky top-0 h-screen overflow-y-auto">
         {sidebarContent}
       </aside>
 
       {/* Mobile Topbar */}
-      <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0d1527] border-b border-slate-800/80 sticky top-0 z-30">
+      <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0e1f38] border-b border-[#192b47] sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
             aria-label="Open navigation menu"
-            className="p-2 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
+            className="p-2 rounded-xl text-slate-300 hover:bg-[#162744] hover:text-white transition"
           >
             <Menu size={22} />
           </button>
           <div className="flex items-center gap-2">
-            <div className="grid size-7 place-items-center rounded-lg bg-emerald-500 text-slate-950 font-black">
-              <Layers size={16} />
+            <div className="grid size-7 place-items-center rounded-lg bg-indigo-600 text-white font-black text-sm">
+              O
             </div>
             <span className="font-bold text-white text-base">{brandTitle}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="grid size-8 place-items-center rounded-lg bg-emerald-950 border border-emerald-500/40 text-emerald-400 font-bold text-xs">
+          <div className="grid size-8 place-items-center rounded-lg bg-[#1c4b95] text-white font-bold text-xs">
             {userInitial}
           </div>
         </div>
@@ -204,15 +213,15 @@ export function DashboardLayout({
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="relative w-72 max-w-[85vw] bg-[#0d1527] border-r border-slate-800 flex flex-col h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+          <div className="relative w-72 max-w-[85vw] bg-[#0e1f38] border-r border-[#192b47] flex flex-col h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200">
             <div className="absolute right-3 top-4">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#162744] transition"
               >
                 <X size={20} />
               </button>
@@ -222,8 +231,8 @@ export function DashboardLayout({
         </div>
       )}
 
-      {/* Main Content Area */}
-      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 xl:p-10 relative">
+      {/* Main Content Area - Image 1 Style (Crisp Light SaaS Workspace) */}
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 xl:p-10 relative bg-[#f8fafc] text-slate-900">
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>
     </div>

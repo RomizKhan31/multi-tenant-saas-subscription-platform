@@ -22,21 +22,21 @@ export const formatDate = (value?: string | Date) =>
 export function StatusBadge({ value }: { value?: string }) {
   const normalized = value?.toUpperCase() || 'UNKNOWN';
   const styles: Record<string, string> = {
-    ACTIVE: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-    SUCCESS: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-    TRIAL: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
-    PENDING: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-    FAILED: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
-    SUSPENDED: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
-    CANCELLED: 'bg-slate-700/40 text-slate-300 border-slate-600/40',
-    ROLLED_BACK: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
+    ACTIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    SUCCESS: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    TRIAL: 'bg-sky-50 text-sky-700 border-sky-200',
+    PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
+    FAILED: 'bg-rose-50 text-rose-700 border-rose-200',
+    SUSPENDED: 'bg-rose-50 text-rose-700 border-rose-200',
+    CANCELLED: 'bg-slate-100 text-slate-600 border-slate-200',
+    ROLLED_BACK: 'bg-rose-50 text-rose-700 border-rose-200',
   };
 
-  const currentStyle = styles[normalized] || 'bg-slate-800 text-slate-400 border-slate-700';
+  const currentStyle = styles[normalized] || 'bg-slate-100 text-slate-600 border-slate-200';
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${currentStyle}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${currentStyle}`}
     >
       <span className="size-1.5 rounded-full bg-current opacity-75" />
       {normalized.replaceAll('_', ' ')}
@@ -49,7 +49,7 @@ export function StatCard({
   value,
   icon,
   detail,
-  iconColor = 'emerald',
+  iconColor = 'indigo',
 }: {
   label: string;
   value: ReactNode;
@@ -58,20 +58,20 @@ export function StatCard({
   iconColor?: 'emerald' | 'amber' | 'cyan' | 'indigo' | 'rose' | 'teal';
 }) {
   const colorMap = {
-    emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-    indigo: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-    rose: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-    teal: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
+    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    amber: 'bg-amber-50 text-amber-600 border-amber-100',
+    cyan: 'bg-sky-50 text-sky-600 border-sky-100',
+    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+    rose: 'bg-rose-50 text-rose-600 border-rose-100',
+    teal: 'bg-teal-50 text-teal-600 border-teal-100',
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-800/90 bg-[#0e1629] p-5 shadow-sm transition hover:border-slate-700">
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md hover:border-slate-300">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-medium text-slate-400">{label}</p>
-          <p className="mt-2 text-3xl font-extrabold tracking-tight text-white">{value}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+          <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">{value}</p>
         </div>
         <div
           className={`grid size-11 shrink-0 place-items-center rounded-xl border ${colorMap[iconColor]}`}
@@ -79,7 +79,7 @@ export function StatCard({
           {icon}
         </div>
       </div>
-      {detail && <p className="mt-3 text-xs text-slate-400">{detail}</p>}
+      {detail && <p className="mt-3 text-xs text-slate-500">{detail}</p>}
     </div>
   );
 }
@@ -95,10 +95,10 @@ export function QueryState({
 }) {
   if (loading) {
     return (
-      <div className="flex min-h-64 items-center justify-center rounded-2xl border border-slate-800 bg-[#0e1629] p-8">
+      <div className="flex min-h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="animate-spin text-emerald-400" size={32} />
-          <p className="text-sm font-medium text-slate-400">Loading data…</p>
+          <Loader2 className="animate-spin text-indigo-600" size={32} />
+          <p className="text-sm font-medium text-slate-500">Loading data…</p>
         </div>
       </div>
     );
@@ -106,9 +106,9 @@ export function QueryState({
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-rose-900/50 bg-rose-950/20 p-6 text-sm text-rose-300">
-        <p className="font-semibold text-rose-200">Failed to load platform data</p>
-        <p className="mt-1 text-xs text-rose-400">
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800">
+        <p className="font-semibold text-rose-900">Failed to load platform data</p>
+        <p className="mt-1 text-xs text-rose-600">
           Check that the backend API service is running, or verify your network connection.
         </p>
       </div>
@@ -263,59 +263,59 @@ export function InvoiceModal({
   if (!invoiceId) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg rounded-2xl border border-slate-800 bg-[#0e1629] p-6 text-slate-100 shadow-2xl space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <div className="flex items-center gap-2">
-            <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
               <ReceiptText size={18} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Payment Invoice</h3>
-              <p className="text-xs text-slate-400">Electronic verification & tax record</p>
+              <h3 className="text-base font-bold text-slate-900">Payment Invoice</h3>
+              <p className="text-xs text-slate-500">Electronic verification & tax record</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
           >
             <X size={18} />
           </button>
         </div>
 
         {loading ? (
-          <div className="py-12 flex items-center justify-center text-slate-400 text-sm">
-            <Loader2 className="animate-spin text-emerald-400 mr-2" size={18} /> Fetching invoice details...
+          <div className="py-12 flex items-center justify-center text-slate-500 text-sm">
+            <Loader2 className="animate-spin text-indigo-600 mr-2" size={18} /> Fetching invoice details...
           </div>
         ) : invoiceData ? (
           <div id="printable-invoice" className="space-y-5 text-sm">
-            <div className="flex justify-between items-start bg-slate-900/60 border border-slate-800 p-4 rounded-xl">
+            <div className="flex justify-between items-start bg-slate-50 border border-slate-200 p-4 rounded-xl">
               <div>
-                <p className="text-xs uppercase font-semibold text-slate-400">Invoice Number</p>
-                <p className="font-mono font-bold text-white text-sm mt-0.5">
+                <p className="text-xs uppercase font-semibold text-slate-500">Invoice Number</p>
+                <p className="font-mono font-bold text-slate-900 text-sm mt-0.5">
                   {invoiceData.invoiceNumber}
                 </p>
-                <p className="text-xs text-slate-400 mt-1">{formatDate(invoiceData.date)}</p>
+                <p className="text-xs text-slate-500 mt-1">{formatDate(invoiceData.date)}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs uppercase font-semibold text-slate-400">Billed To</p>
-                <p className="font-bold text-white text-sm mt-0.5">
+                <p className="text-xs uppercase font-semibold text-slate-500">Billed To</p>
+                <p className="font-bold text-slate-900 text-sm mt-0.5">
                   {invoiceData.organization?.name || 'Customer'}
                 </p>
-                <p className="text-xs text-slate-400">{invoiceData.organization?.billingEmail || ''}</p>
+                <p className="text-xs text-slate-500">{invoiceData.organization?.billingEmail || ''}</p>
               </div>
             </div>
 
-            <div className="border border-slate-800 rounded-xl overflow-hidden">
+            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-900/80 border-b border-slate-800 text-slate-400 uppercase">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase">
                   <tr>
                     <th className="p-3">Description</th>
                     <th className="p-3 text-right">Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-slate-150">
                   {(invoiceData.lineItems && invoiceData.lineItems.length > 0
                     ? invoiceData.lineItems
                     : [
@@ -326,9 +326,9 @@ export function InvoiceModal({
                         },
                       ]
                   ).map((li: InvoiceItem, idx: number) => (
-                    <tr key={idx} className="hover:bg-slate-800/40">
-                      <td className="p-3 font-medium text-slate-200">{li.description}</td>
-                      <td className="p-3 text-right font-semibold text-white">
+                    <tr key={idx} className="hover:bg-slate-50/70">
+                      <td className="p-3 font-medium text-slate-800">{li.description}</td>
+                      <td className="p-3 text-right font-semibold text-slate-900">
                         {formatCurrency(li.amount, invoiceData.currency)}
                       </td>
                     </tr>
@@ -337,24 +337,24 @@ export function InvoiceModal({
               </table>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs bg-slate-900/60 border border-slate-800 p-3 rounded-xl text-slate-300">
+            <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 border border-slate-200 p-3 rounded-xl text-slate-700">
               <div>
-                <span className="text-slate-400">Status: </span>
-                <span className="font-bold text-emerald-400">{invoiceData.status}</span>
+                <span className="text-slate-500">Status: </span>
+                <span className="font-bold text-emerald-600">{invoiceData.status}</span>
               </div>
               {invoiceData.paymentIntentId && (
                 <div className="text-right truncate">
-                  <span className="text-slate-400">Ref: </span>
-                  <span className="font-mono text-[11px] text-slate-300">
+                  <span className="text-slate-500">Ref: </span>
+                  <span className="font-mono text-[11px] text-slate-700">
                     {invoiceData.paymentIntentId}
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-between items-center p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-              <span className="font-bold text-white">Total Paid</span>
-              <span className="text-lg font-black text-emerald-400">
+            <div className="flex justify-between items-center p-3.5 bg-indigo-50/80 border border-indigo-200/80 rounded-xl">
+              <span className="font-bold text-slate-900">Total Paid</span>
+              <span className="text-lg font-black text-indigo-600">
                 {formatCurrency(invoiceData.amount, invoiceData.currency)}
               </span>
             </div>
@@ -363,35 +363,35 @@ export function InvoiceModal({
               <button
                 type="button"
                 onClick={() => downloadInvoiceHtml(invoiceData)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm"
               >
                 <Download size={13} /> Download Invoice
               </button>
               <button
                 type="button"
                 onClick={() => downloadInvoiceJson(invoiceData)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition shadow-sm"
               >
                 <Download size={13} /> JSON
               </button>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition shadow-sm"
               >
                 <Printer size={13} /> Print / PDF
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 transition"
+                className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition"
               >
                 Close
               </button>
             </div>
           </div>
         ) : (
-          <div className="py-6 text-center text-sm text-rose-400">
+          <div className="py-6 text-center text-sm text-rose-600">
             Could not load invoice data.
           </div>
         )}

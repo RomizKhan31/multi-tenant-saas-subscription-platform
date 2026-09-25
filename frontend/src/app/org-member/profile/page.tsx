@@ -53,8 +53,8 @@ export default function OrgMemberProfilePage() {
           role="status"
           className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium ${
             notice.type === 'success'
-              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border border-rose-200 text-rose-800'
           }`}
         >
           <span>{notice.message}</span>
@@ -64,14 +64,14 @@ export default function OrgMemberProfilePage() {
         </div>
       )}
 
-      <section className="rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm max-w-xl">
-        <div className="flex items-center gap-2.5 pb-4 border-b border-slate-800 mb-6">
-          <div className="grid size-9 place-items-center rounded-xl bg-cyan-500/10 text-cyan-400">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs max-w-xl">
+        <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 mb-6">
+          <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
             <User size={18} />
           </div>
           <div>
-            <h2 className="font-bold text-white text-base">Account Identity</h2>
-            <p className="text-xs text-slate-400">Your details visible to team members.</p>
+            <h2 className="font-bold text-slate-900 text-base">Account Identity</h2>
+            <p className="text-xs text-slate-500">Your details visible to team members.</p>
           </div>
         </div>
 
@@ -83,23 +83,23 @@ export default function OrgMemberProfilePage() {
           className="space-y-4"
         >
           <div>
-            <label className="text-xs font-semibold text-slate-300 uppercase">Your Name</label>
+            <label className="text-xs font-semibold text-slate-700 uppercase">Your Name</label>
             <input
               required
               value={profile.name}
               onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-              className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
+              className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-300 uppercase">Email Address</label>
+            <label className="text-xs font-semibold text-slate-700 uppercase">Email Address</label>
             <input
               required
               type="email"
               value={profile.email}
               onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-              className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
+              className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
             />
           </div>
 
@@ -107,7 +107,7 @@ export default function OrgMemberProfilePage() {
             <button
               type="submit"
               disabled={profileMutation.isPending}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-bold shadow-lg shadow-emerald-500/20 transition active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-xs transition active:scale-95 disabled:opacity-50"
             >
               <Save size={16} />
               <span>{profileMutation.isPending ? 'Saving...' : 'Save Profile'}</span>

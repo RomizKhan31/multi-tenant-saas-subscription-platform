@@ -184,15 +184,15 @@ export default function OrgAdminTransactionsPage() {
         </div>
       )}
 
-      <section className="rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm overflow-hidden">
-        <div className="flex flex-col gap-4 border-b border-slate-800 pb-5 mb-5 sm:flex-row sm:items-center sm:justify-between">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
+        <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 mb-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400">
+            <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
               <ReceiptText size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-white text-base">Invoices & Receipts</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="font-bold text-slate-900 text-base">Invoices & Receipts</h2>
+              <p className="text-xs text-slate-500">
                 View detailed breakdown, print tax receipts, or download HTML invoices.
               </p>
             </div>
@@ -203,7 +203,7 @@ export default function OrgAdminTransactionsPage() {
               aria-label="Filter status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-slate-700 bg-slate-900/80 px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+              className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-600"
             >
               <option value="">All statuses</option>
               <option value="SUCCESS">SUCCESS</option>
@@ -228,7 +228,7 @@ export default function OrgAdminTransactionsPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-slate-900/80 border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-semibold">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider font-semibold">
                   <tr>
                     <th className="px-5 py-3.5">Invoice #</th>
                     <th className="px-5 py-3.5">Amount</th>
@@ -237,30 +237,30 @@ export default function OrgAdminTransactionsPage() {
                     <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-slate-100">
                   {invoiceRecords.map((item: Payment | Transaction) => {
                     const fallbackPaymentId = 'paymentId' in item ? item.paymentId : undefined;
                     const isDownloading = downloadingId === item._id;
 
                     return (
-                      <tr key={item._id} className="hover:bg-slate-800/40 transition">
-                        <td className="px-5 py-4 font-mono text-xs text-slate-300">
+                      <tr key={item._id} className="hover:bg-slate-50/70 transition">
+                        <td className="px-5 py-4 font-mono text-xs text-slate-500">
                           INV-{item._id.slice(-8).toUpperCase()}
                         </td>
-                        <td className="px-5 py-4 font-bold text-white">
+                        <td className="px-5 py-4 font-bold text-slate-900">
                           {formatCurrency(item.amount, (item.currency || 'USD').toUpperCase())}
                         </td>
                         <td className="px-5 py-4">
                           <StatusBadge value={item.status} />
                         </td>
-                        <td className="px-5 py-4 text-slate-400 text-xs">
+                        <td className="px-5 py-4 text-slate-500 text-xs">
                           {formatDate(item.createdAt)}
                         </td>
                         <td className="px-5 py-4 text-right space-x-2 whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => handleViewInvoice(item._id, fallbackPaymentId)}
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition"
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg transition"
                           >
                             <Eye size={13} /> View Invoice
                           </button>
@@ -269,7 +269,7 @@ export default function OrgAdminTransactionsPage() {
                             type="button"
                             onClick={() => handleDirectDownload(item._id, fallbackPaymentId)}
                             disabled={isDownloading}
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-200 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-1.5 rounded-lg transition shadow-sm disabled:opacity-50"
                           >
                             <Download size={13} />{' '}
                             {isDownloading ? 'Downloading...' : 'Download'}

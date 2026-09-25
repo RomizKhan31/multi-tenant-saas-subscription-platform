@@ -84,25 +84,25 @@ export default function OrgAdminReportsPage() {
           />
         </div>
 
-        <div className="rounded-2xl border border-slate-800 bg-[#0e1629] p-6 shadow-sm">
-          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-800 mb-5">
-            <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 mb-5">
+            <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
               <BarChart3 size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-white text-base">Seat Allocation Breakdown</h2>
-              <p className="text-xs text-slate-400">Distribution of permissions within this organization.</p>
+              <h2 className="font-bold text-slate-900 text-base">Seat Allocation Breakdown</h2>
+              <p className="text-xs text-slate-500">Distribution of permissions within this organization.</p>
             </div>
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-800 bg-slate-900/60">
-              <span className="text-xs font-semibold text-slate-300">Administrators</span>
-              <span className="font-bold text-emerald-400 text-sm">{analytics.admins}</span>
+            <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+              <span className="text-xs font-semibold text-slate-700">Administrators</span>
+              <span className="font-bold text-indigo-600 text-sm">{analytics.admins}</span>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-800 bg-slate-900/60">
-              <span className="text-xs font-semibold text-slate-300">Regular Members</span>
-              <span className="font-bold text-cyan-400 text-sm">{analytics.standardMembers}</span>
+            <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+              <span className="text-xs font-semibold text-slate-700">Regular Members</span>
+              <span className="font-bold text-slate-900 text-sm">{analytics.standardMembers}</span>
             </div>
           </div>
         </div>
