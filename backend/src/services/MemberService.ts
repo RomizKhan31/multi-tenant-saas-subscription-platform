@@ -45,6 +45,7 @@ export class MemberService {
 
     // Generate invitation token
     const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
 
@@ -53,7 +54,9 @@ export class MemberService {
       organizationId,
       email,
       role,
-      token,
+      // Like password-reset tokens, invitations are bearer credentials and
+      // must not be usable directly from a database dump.
+      token: tokenHash,
       expiresAt,
     });
 
@@ -69,7 +72,8 @@ export class MemberService {
     name: string;
     password: string;
   }): Promise<{ user: Omit<IUser, 'password'>; token: string }> {
-    const invitation = await this.invitationRepository.findByToken(token);
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const invitation = await this.invitationRepository.findByToken(tokenHash);
     
     if (!invitation) {
       throw new Error('Invalid invitation');

@@ -117,7 +117,7 @@ export class AuthService {
     // Create Stripe Checkout Session
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     let checkoutUrl = '';
-    let sessionId = `cs_test_${Date.now()}`;
+    let sessionId = `cs_test_${crypto.randomUUID()}`;
 
     if (
       process.env.NODE_ENV === 'test' ||
@@ -266,12 +266,15 @@ export class AuthService {
 
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
 
     await this.passwordResetTokenRepository.create({
       userId: user._id,
-      token: resetToken,
+      // Store only a non-reversible verifier. A database disclosure must not
+      // provide credentials that can reset accounts.
+      token: tokenHash,
       expiresAt,
     });
 
@@ -290,7 +293,8 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    const resetToken = await this.passwordResetTokenRepository.findByToken(token);
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const resetToken = await this.passwordResetTokenRepository.findByToken(tokenHash);
     if (!resetToken) {
       throw new Error('Invalid or expired reset token');
     }

@@ -76,6 +76,20 @@ describe('Authentication Tests', () => {
 
       expect(response.status).toBe(400);
     });
+
+    it('should reject an attempt to self-assign to an organization', async () => {
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'attacker@example.com',
+          password: 'TestPassword123!',
+          name: 'Attacker',
+          organizationId: new mongoose.Types.ObjectId().toString(),
+        });
+
+      expect(response.status).toBe(400);
+      expect(await User.findOne({ email: 'attacker@example.com' })).toBeNull();
+    });
   });
 
   describe('POST /api/auth/login', () => {
@@ -203,6 +217,20 @@ describe('Authentication Tests', () => {
       expect(response.status).toBe(401);
       expect(response.body.error).toContain('Token expired');
     });
+
+    it('should invalidate a token when its account is deleted', async () => {
+      await User.deleteOne({ email: 'test@example.com' });
+
+      const response = await request(app)
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          currentPassword: 'TestPassword123!',
+          newPassword: 'NewPassword123!',
+        });
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toContain('no longer exists');
+    });
   });
 });
-

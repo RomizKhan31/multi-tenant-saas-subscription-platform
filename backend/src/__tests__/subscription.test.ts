@@ -6,7 +6,6 @@ import { BillingInterval, UserRole, SubscriptionStatus } from '../types';
 
 describe('Subscription Lifecycle & Upgrade/Downgrade Tests', () => {
   let orgAdminToken: string;
-  let orgId: mongoose.Types.ObjectId;
   let starterPlan: any;
   let proPlan: any;
   let enterprisePlan: any;
@@ -66,7 +65,6 @@ describe('Subscription Lifecycle & Upgrade/Downgrade Tests', () => {
       billingEmail: 'billing@acmesaas.com',
       status: 'ACTIVE',
     });
-    orgId = org._id;
 
     // Seed admin user
     await User.create({

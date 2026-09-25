@@ -594,7 +594,6 @@ export default function OrgAdminSubscriptionPage() {
               const isCurrent = currentPlan?._id === plan._id;
               // Determine whether this plan is an upgrade or a downgrade relative to current
               const isUpgrade = currentPlan ? plan.price > currentPlan.price : true;
-              const isDowngrade = currentPlan ? plan.price < currentPlan.price : false;
 
               return (
                 <div

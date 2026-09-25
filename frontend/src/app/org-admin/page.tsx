@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -14,7 +13,6 @@ import {
   AlertTriangle,
   RotateCcw,
   Check,
-  Sparkles,
   Zap,
   ArrowUpRight,
   ReceiptText,

@@ -18,7 +18,7 @@ const seedDatabase = async () => {
     console.log('Cleared existing data');
 
     // Create default plans: Starter and Premium (with unlimited member limit)
-    const starterPlan = await Plan.create({
+    await Plan.create({
       name: 'Starter Plan',
       price: 29.0,
       billingInterval: BillingInterval.MONTHLY,
@@ -34,7 +34,7 @@ const seedDatabase = async () => {
       isActive: true,
     });
 
-    const enterprisePlan = await Plan.create({
+    await Plan.create({
       name: 'Enterprise Plan',
       price: 299.0,
       billingInterval: BillingInterval.YEARLY,

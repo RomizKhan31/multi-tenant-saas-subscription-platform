@@ -4,6 +4,7 @@ import { PlanRepository } from '../repositories';
 import { OrganizationRepository } from '../repositories';
 import { IPayment, PaymentStatus, SubscriptionStatus } from '../types';
 import { Types } from 'mongoose';
+import crypto from 'crypto';
 import { stripe } from '../config/stripe';
 import { Payment, Transaction } from '../models';
 
@@ -43,8 +44,9 @@ export class PaymentService {
     }
 
     // Create Stripe checkout session
-    let sessionId = `cs_test_${Date.now()}`;
-    let sessionUrl = `${process.env.FRONTEND_URL}/payment/success?session_id=${sessionId}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    let sessionId = `cs_test_${crypto.randomUUID()}`;
+    let sessionUrl = `${frontendUrl}/payment/success?session_id=${sessionId}`;
 
     if (
       process.env.NODE_ENV !== 'test' &&
@@ -66,8 +68,8 @@ export class PaymentService {
           },
         ],
         mode: 'payment',
-        success_url: `${process.env.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.FRONTEND_URL}/payment/cancel`,
+        success_url: `${frontendUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${frontendUrl}/payment/cancel`,
         customer_email: customerEmail,
         payment_intent_data: customerEmail ? { receipt_email: customerEmail } : undefined,
         metadata: {
@@ -240,4 +242,3 @@ export class PaymentService {
     };
   }
 }
-

@@ -155,13 +155,21 @@ export const downloadInvoiceJson = (data: InvoiceRecord) => {
   }, 1000);
 };
 
+const escapeHtml = (value: string | number | undefined): string =>
+  String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+
 export const downloadInvoiceHtml = (data: InvoiceRecord) => {
   const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Invoice ${data.invoiceNumber}</title>
+  <title>Invoice ${escapeHtml(data.invoiceNumber)}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 40px; color: #0f172a; background: #fff; }
     .invoice-card { max-width: 650px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
@@ -183,8 +191,8 @@ export const downloadInvoiceHtml = (data: InvoiceRecord) => {
     <div class="header">
       <div>
         <div class="title">INVOICE</div>
-        <div style="font-family: monospace; font-weight: 700; color: #475569; margin-top: 4px;">${data.invoiceNumber}</div>
-        <div class="badge">${data.status}</div>
+        <div style="font-family: monospace; font-weight: 700; color: #475569; margin-top: 4px;">${escapeHtml(data.invoiceNumber)}</div>
+        <div class="badge">${escapeHtml(data.status)}</div>
       </div>
       <div style="text-align: right;">
         <div style="font-weight: 800; font-size: 16px; color: #0f172a;">Octopi SaaS Platform</div>
@@ -195,14 +203,14 @@ export const downloadInvoiceHtml = (data: InvoiceRecord) => {
     <div class="details">
       <div class="details-box">
         <div class="label">Billed To</div>
-        <div style="font-weight: 700; color: #0f172a;">${data.organization?.name || 'Customer'}</div>
-        <div>${data.organization?.billingEmail || ''}</div>
+        <div style="font-weight: 700; color: #0f172a;">${escapeHtml(data.organization?.name || 'Customer')}</div>
+        <div>${escapeHtml(data.organization?.billingEmail)}</div>
       </div>
       <div class="details-box">
         <div class="label">Payment Details</div>
-        <div><strong>Status:</strong> ${data.status}</div>
-        <div><strong>Currency:</strong> ${data.currency}</div>
-        ${data.paymentIntentId ? `<div style="font-family: monospace; font-size: 11px; word-break: break-all;"><strong>Ref:</strong> ${data.paymentIntentId}</div>` : ''}
+        <div><strong>Status:</strong> ${escapeHtml(data.status)}</div>
+        <div><strong>Currency:</strong> ${escapeHtml(data.currency)}</div>
+        ${data.paymentIntentId ? `<div style="font-family: monospace; font-size: 11px; word-break: break-all;"><strong>Ref:</strong> ${escapeHtml(data.paymentIntentId)}</div>` : ''}
       </div>
     </div>
     <table>
@@ -219,8 +227,8 @@ export const downloadInvoiceHtml = (data: InvoiceRecord) => {
           : [{ description: `${data.planName || 'Subscription Plan'} (${data.billingInterval || 'MONTHLY'})`, quantity: 1, amount: data.amount }]
         ).map((item: InvoiceItem) => `
           <tr>
-            <td><strong>${item.description}</strong></td>
-            <td style="text-align: center;">${item.quantity || 1}</td>
+            <td><strong>${escapeHtml(item.description)}</strong></td>
+            <td style="text-align: center;">${escapeHtml(item.quantity || 1)}</td>
             <td style="text-align: right; font-weight: 600;">${formatCurrency(item.amount, data.currency)}</td>
           </tr>
         `).join('')}

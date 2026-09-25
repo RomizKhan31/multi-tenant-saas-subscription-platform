@@ -11,7 +11,6 @@ import {
   Menu,
   X,
   LucideIcon,
-  Layers,
   Loader2,
   AlertOctagon,
   RefreshCw,

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { Types } from 'mongoose';
 import { IAuthRequest, UserRole, OrganizationStatus } from '../types';
 import { Organization } from '../models/Organization';
+import { User } from '../models/User';
 
 export const requireAuth = async (req: IAuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -27,11 +28,30 @@ export const requireAuth = async (req: IAuthRequest, res: Response, next: NextFu
       organizationId?: string;
     };
 
+    if (!decoded.userId || !Types.ObjectId.isValid(decoded.userId)) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    // A signed JWT is a credential, not the authorization source of truth. Loading
+    // the account on each protected request immediately applies role changes,
+    // removals from an organization, and account deactivations.
+    const user = await User.findById(decoded.userId)
+      .select('email role organizationId status')
+      .lean();
+
+    if (!user) {
+      return res.status(401).json({ error: 'Account no longer exists' });
+    }
+
+    if (user.status !== 'ACTIVE') {
+      return res.status(403).json({ error: 'Account is inactive' });
+    }
+
     req.user = {
-      userId: new Types.ObjectId(decoded.userId),
-      email: decoded.email,
-      role: decoded.role,
-      organizationId: decoded.organizationId ? new Types.ObjectId(decoded.organizationId) : undefined,
+      userId: user._id,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId,
     };
 
     next();
