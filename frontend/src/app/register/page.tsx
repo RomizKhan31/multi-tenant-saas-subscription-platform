@@ -99,7 +99,7 @@ export default function RegisterPage() {
             O
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Create your SaaS organization
+            Create your organization
           </h1>
           <p className="mt-2 text-sm text-slate-600">
             Complete your registration and subscribe to get started instantly.

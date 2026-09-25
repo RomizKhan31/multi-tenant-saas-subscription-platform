@@ -43,7 +43,7 @@ export default function Home() {
             <div className="size-9 rounded-xl bg-indigo-600 text-white font-black text-lg flex items-center justify-center">
               O
             </div>
-            <span className="font-bold text-slate-900 text-lg">Octopi Digital SaaS</span>
+            <span className="font-bold text-slate-900 text-lg">Octopi Digital LLC</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -128,7 +128,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
-        Octopi Digital SaaS Subscription Platform · Technical Assessment Implementation
+        Octopi Digital LLC. All Right Reserved.
       </footer>
     </div>
   );
