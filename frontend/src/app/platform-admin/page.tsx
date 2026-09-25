@@ -42,14 +42,13 @@ type Subscription = {
   status: string;
   createdAt: string;
 };
-type Transaction = {
-  _id: string;
-  organizationId: string;
-  amount: number;
-  currency: string;
-  status: string;
-  createdAt: string;
+type SubscriptionSummary = {
+  total: number;
+  active: number;
+  activeByPlan: Array<{ planId: string; count: number }>;
 };
+type OrganizationSummary = { total: number; trialOrPending: number };
+type TransactionSummary = { totalRevenue: number; pending: number; failed: number };
 
 export default function PlatformAdminOverview() {
   const organizations = useQuery({
@@ -63,41 +62,41 @@ export default function PlatformAdminOverview() {
     queryFn: async () => (await api.get<{ plans: Plan[] }>('/plans')).data.plans,
   });
 
+  const organizationSummary = useQuery({
+    queryKey: ['organization-summary-overview'],
+    queryFn: async () => (await api.get<OrganizationSummary>('/organizations/summary')).data,
+  });
+
   const subscriptions = useQuery({
     queryKey: ['subscriptions-overview'],
     queryFn: async () =>
       (await api.get<{ subscriptions: Subscription[] }>('/subscriptions/all')).data.subscriptions,
   });
 
-  const transactions = useQuery({
-    queryKey: ['transactions-overview'],
-    queryFn: async () =>
-      (await api.get<{ transactions: Transaction[] }>('/transactions/all')).data.transactions,
+  const subscriptionSummary = useQuery({
+    queryKey: ['subscription-summary-overview'],
+    queryFn: async () => (await api.get<SubscriptionSummary>('/subscriptions/summary')).data,
+  });
+
+  const transactionSummary = useQuery({
+    queryKey: ['transaction-summary-overview'],
+    queryFn: async () => (await api.get<TransactionSummary>('/transactions/summary')).data,
   });
 
   const metrics = useMemo(() => {
-    const orgList = organizations.data || [];
-    const txList = transactions.data || [];
-    const subList = subscriptions.data || [];
-
-    const totalRevenue = txList
-      .filter((t) => t.status === 'SUCCESS')
-      .reduce((acc, curr) => acc + curr.amount, 0);
-
-    const activeSubs = subList.filter((s) => s.status === 'ACTIVE').length;
-    const trialOrPending = orgList.filter((o) => o.status === 'TRIAL' || o.status === 'PENDING').length;
-    const pendingInvoices = txList.filter((t) => t.status === 'PENDING').length;
-    const failedPayments = txList.filter((t) => t.status === 'FAILED').length;
+    // The summary is calculated in MongoDB across every current tenant
+    // subscription. The list endpoint is paginated and must not drive metrics.
+    const activeSubs = subscriptionSummary.data?.active ?? 0;
 
     return {
-      totalOrganizations: orgList.length,
-      totalRevenue,
+      totalOrganizations: organizationSummary.data?.total ?? 0,
+      totalRevenue: transactionSummary.data?.totalRevenue ?? 0,
       activeSubs,
-      trialOrPending,
-      pendingInvoices,
-      failedPayments,
+      trialOrPending: organizationSummary.data?.trialOrPending ?? 0,
+      pendingInvoices: transactionSummary.data?.pending ?? 0,
+      failedPayments: transactionSummary.data?.failed ?? 0,
     };
-  }, [organizations.data, subscriptions.data, transactions.data]);
+  }, [organizationSummary.data, subscriptionSummary.data, transactionSummary.data]);
 
   const recentSignups = useMemo(() => {
     return [...(organizations.data || [])]
@@ -133,9 +132,11 @@ export default function PlatformAdminOverview() {
           organizations.isLoading ||
           plans.isLoading ||
           subscriptions.isLoading ||
-          transactions.isLoading
+          organizationSummary.isLoading ||
+          subscriptionSummary.isLoading ||
+          transactionSummary.isLoading
         }
-        error={organizations.error || plans.error || subscriptions.error || transactions.error}
+        error={organizations.error || plans.error || subscriptions.error || organizationSummary.error || subscriptionSummary.error || transactionSummary.error}
       >
         {/* Stat Cards Grid matching Image 1 */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -204,10 +205,9 @@ export default function PlatformAdminOverview() {
           <div className="mt-5 space-y-4">
             {plans.data && plans.data.length > 0 ? (
               plans.data.map((plan) => {
-                const subCount =
-                  subscriptions.data?.filter(
-                    (s) => s.planId === plan._id && s.status === 'ACTIVE'
-                  ).length || 0;
+                const subCount = subscriptionSummary.data?.activeByPlan.find(
+                  (item) => item.planId === plan._id
+                )?.count || 0;
                 return (
                   <div
                     key={plan._id}

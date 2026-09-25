@@ -51,6 +51,10 @@ export class TransactionService {
     return this.transactionRepository.count(filters);
   }
 
+  async getDashboardSummary() {
+    return this.transactionRepository.getDashboardSummary();
+  }
+
   async processPaymentWithTransaction(
     paymentId: Types.ObjectId,
     organizationId: Types.ObjectId,

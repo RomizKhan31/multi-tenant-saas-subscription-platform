@@ -16,8 +16,8 @@ export const createSubscriptionRoutes = (subscriptionController: SubscriptionCon
 
   // Platform admin
   router.get('/all', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), subscriptionController.getSubscriptions);
+  router.get('/summary', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), subscriptionController.getSubscriptionSummary);
   router.post('/check-expiring', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), subscriptionController.checkExpiringSubscriptions);
 
   return router;
 };
-

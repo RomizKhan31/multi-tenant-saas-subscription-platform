@@ -226,6 +226,15 @@ export class SubscriptionController {
     }
   };
 
+  getSubscriptionSummary = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      const summary = await this.subscriptionService.getCurrentSubscriptionSummary();
+      res.status(200).json(summary);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
   checkExpiringSubscriptions = async (_req: Request, res: Response): Promise<void> => {
     try {
       const sentCount = await this.subscriptionService.checkExpiringSubscriptions();

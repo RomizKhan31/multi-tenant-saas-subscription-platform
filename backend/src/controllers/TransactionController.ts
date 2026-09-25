@@ -115,4 +115,12 @@ export class TransactionController {
       res.status(500).json({ error: error.message });
     }
   };
+
+  getDashboardSummary = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      res.status(200).json(await this.transactionService.getDashboardSummary());
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
 }

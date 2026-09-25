@@ -287,4 +287,8 @@ export class SubscriptionService {
   async countSubscriptions(filters: any = {}): Promise<number> {
     return this.subscriptionRepository.count(filters);
   }
+
+  async getCurrentSubscriptionSummary() {
+    return this.subscriptionRepository.getCurrentSubscriptionSummary();
+  }
 }

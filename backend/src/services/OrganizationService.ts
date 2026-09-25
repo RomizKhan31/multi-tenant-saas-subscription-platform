@@ -99,6 +99,10 @@ export class OrganizationService {
     return this.organizationRepository.count(filters);
   }
 
+  async getDashboardSummary() {
+    return this.organizationRepository.getDashboardSummary();
+  }
+
   async getOrganizationMembers(organizationId: Types.ObjectId): Promise<Omit<IUser, 'password'>[]> {
     const members = await this.userRepository.findByOrganizationId(organizationId);
     return members.map((m: any) => {

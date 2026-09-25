@@ -11,6 +11,7 @@ export const createTransactionRoutes = (transactionController: TransactionContro
 
   // Platform admin
   router.get('/all', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), transactionController.getAllTransactions);
+  router.get('/summary', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), transactionController.getDashboardSummary);
   router.get('/:id', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), transactionController.getTransaction);
 
   return router;

@@ -3,6 +3,19 @@ import { IOrganization as IOrganizationType } from '../types';
 import { Types, ClientSession } from 'mongoose';
 
 export class OrganizationRepository {
+  async getDashboardSummary(): Promise<{ total: number; trialOrPending: number }> {
+    const [summary] = await Organization.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          trialOrPending: { $sum: { $cond: [{ $in: ['$status', ['TRIAL', 'PENDING']] }, 1, 0] } },
+        },
+      },
+    ]);
+    return { total: summary?.total ?? 0, trialOrPending: summary?.trialOrPending ?? 0 };
+  }
+
   async findById(organizationId: Types.ObjectId, session?: ClientSession): Promise<IOrganizationType | null> {
     const query = Organization.findById(organizationId);
     if (session) query.session(session);

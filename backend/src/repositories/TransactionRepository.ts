@@ -3,6 +3,20 @@ import { ITransaction } from '../types';
 import { Types, ClientSession } from 'mongoose';
 
 export class TransactionRepository {
+  async getDashboardSummary(): Promise<{ totalRevenue: number; pending: number; failed: number }> {
+    const [summary] = await Transaction.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $cond: [{ $eq: ['$status', 'SUCCESS'] }, '$amount', 0] } },
+          pending: { $sum: { $cond: [{ $eq: ['$status', 'PENDING'] }, 1, 0] } },
+          failed: { $sum: { $cond: [{ $eq: ['$status', 'FAILED'] }, 1, 0] } },
+        },
+      },
+    ]);
+    return { totalRevenue: summary?.totalRevenue ?? 0, pending: summary?.pending ?? 0, failed: summary?.failed ?? 0 };
+  }
+
   async findById(transactionId: Types.ObjectId, session?: ClientSession): Promise<ITransaction | null> {
     const query = Transaction.findById(transactionId);
     if (session) query.session(session);
