@@ -23,7 +23,7 @@ const getConnectionFailureReason = (error: unknown, mongoUri: string): string =>
   }
 
   if (/EPERM/i.test(message)) {
-    return `The operating system blocked the connection to ${target}. Check local firewall, container, or sandbox networking settings.`;
+    return `The operating system blocked the connection to ${target}. Check local firewall or sandbox networking settings.`;
   }
 
   if (/ENOTFOUND|EAI_AGAIN/i.test(message)) {
