@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { OrganizationController } from '../controllers';
-import { requireAuth, requireRole } from '../middleware/auth';
+import { requireAuth, requireRole, requireOrganizationAccess } from '../middleware/auth';
 import { UserRole } from '../types';
 
 export const createOrganizationRoutes = (organizationController: OrganizationController): Router => {
@@ -16,7 +16,7 @@ export const createOrganizationRoutes = (organizationController: OrganizationCon
   router.post('/:id/reactivate', requireAuth, requireRole([UserRole.PLATFORM_ADMIN]), organizationController.reactivateOrganization);
 
   // Organization admin
-  router.put('/profile', requireAuth, requireRole([UserRole.ORGANIZATION_ADMIN]), organizationController.updateOrganization);
+  router.put('/profile', requireAuth, requireOrganizationAccess, requireRole([UserRole.ORGANIZATION_ADMIN]), organizationController.updateOrganization);
 
   return router;
 };

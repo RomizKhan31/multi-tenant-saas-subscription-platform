@@ -1,7 +1,8 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Types } from 'mongoose';
-import { IAuthRequest, UserRole } from '../types';
+import { IAuthRequest, UserRole, OrganizationStatus } from '../types';
+import { Organization } from '../models/Organization';
 
 export const requireAuth = async (req: IAuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -60,7 +61,7 @@ export const requireRole = (roles: UserRole[]) => {
   };
 };
 
-export const requireOrganizationAccess = (req: IAuthRequest, res: Response, next: NextFunction) => {
+export const requireOrganizationAccess = async (req: IAuthRequest, res: Response, next: NextFunction) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
@@ -69,5 +70,28 @@ export const requireOrganizationAccess = (req: IAuthRequest, res: Response, next
     return res.status(403).json({ error: 'No organization associated with user' });
   }
 
-  next();
+  try {
+    const org = await Organization.findById(req.user.organizationId).lean();
+    if (!org) {
+      return res.status(404).json({ error: 'Organization not found' });
+    }
+
+    if (org.status === OrganizationStatus.SUSPENDED) {
+      return res.status(403).json({
+        error: 'Your organization has been suspended. Please contact platform support.',
+        code: 'ORGANIZATION_SUSPENDED',
+      });
+    }
+
+    if (org.status === OrganizationStatus.CANCELLED) {
+      return res.status(403).json({
+        error: 'Your organization has been cancelled.',
+        code: 'ORGANIZATION_CANCELLED',
+      });
+    }
+
+    next();
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to verify organization status' });
+  }
 };

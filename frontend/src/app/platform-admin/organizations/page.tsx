@@ -349,8 +349,43 @@ export default function PlatformAdminOrganizationsPage() {
                     <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                       Status
                     </span>
-                    <div className="mt-1">
+                    <div className="mt-1 flex items-center gap-2">
                       <StatusBadge value={orgDetails.data.organization.status} />
+                      {orgDetails.data.organization.status === 'SUSPENDED' ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            organizationAction.mutate({
+                              id: orgDetails.data.organization._id,
+                              action: 'reactivate',
+                            })
+                          }
+                          disabled={organizationAction.isPending}
+                          className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition disabled:opacity-50"
+                        >
+                          {organizationAction.isPending ? 'Updating...' : 'Reactivate'}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `Suspend ${orgDetails.data.organization.name}? All members in this tenant will lose access immediately.`
+                              )
+                            ) {
+                              organizationAction.mutate({
+                                id: orgDetails.data.organization._id,
+                                action: 'suspend',
+                              });
+                            }
+                          }}
+                          disabled={organizationAction.isPending}
+                          className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition disabled:opacity-50"
+                        >
+                          {organizationAction.isPending ? 'Updating...' : 'Suspend'}
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div>

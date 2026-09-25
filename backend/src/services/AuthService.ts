@@ -1,12 +1,13 @@
-import { UserRepository, PasswordResetTokenRepository, PendingRegistrationRepository, PlanRepository } from '../repositories';
+import { UserRepository, PasswordResetTokenRepository, PendingRegistrationRepository, PlanRepository, OrganizationRepository } from '../repositories';
 import { generateToken } from '../utils/jwt';
-import { IUser } from '../types';
+import { IUser, OrganizationStatus, UserRole } from '../types';
 import { Types } from 'mongoose';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { stripe } from '../config/stripe';
 import { sendEmail } from '../utils/email';
 import { WebhookService } from './WebhookService';
+import { Organization } from '../models/Organization';
 
 export class AuthService {
   constructor(
@@ -14,8 +15,16 @@ export class AuthService {
     private passwordResetTokenRepository: PasswordResetTokenRepository,
     private pendingRegistrationRepository?: PendingRegistrationRepository,
     private planRepository?: PlanRepository,
-    private webhookService?: WebhookService
+    private webhookService?: WebhookService,
+    private organizationRepository?: OrganizationRepository
   ) {}
+
+  private async getOrganization(organizationId: Types.ObjectId) {
+    if (this.organizationRepository) {
+      return this.organizationRepository.findById(organizationId);
+    }
+    return Organization.findById(organizationId).lean();
+  }
 
   setWebhookService(webhookService: WebhookService): void {
     this.webhookService = webhookService;
@@ -30,6 +39,20 @@ export class AuthService {
     const existingUser = await this.userRepository.findByEmail(userData.email);
     if (existingUser) {
       throw new Error('User with this email already exists');
+    }
+
+    if (userData.organizationId) {
+      const orgId = new Types.ObjectId(userData.organizationId);
+      const organization = await this.getOrganization(orgId);
+      if (!organization) {
+        throw new Error('Organization not found');
+      }
+      if (organization.status === OrganizationStatus.SUSPENDED) {
+        throw new Error('Cannot register user: organization is suspended.');
+      }
+      if (organization.status === OrganizationStatus.CANCELLED) {
+        throw new Error('Cannot register user: organization is cancelled.');
+      }
     }
 
     const user = await this.userRepository.create({
@@ -187,6 +210,19 @@ export class AuthService {
 
     if (user.status === 'INACTIVE') {
       throw new Error('Account is inactive');
+    }
+
+    if (user.role !== UserRole.PLATFORM_ADMIN && user.organizationId) {
+      const organization = await this.getOrganization(user.organizationId);
+      if (!organization) {
+        throw new Error('Organization not found');
+      }
+      if (organization.status === OrganizationStatus.SUSPENDED) {
+        throw new Error('Your organization has been suspended. Please contact platform support.');
+      }
+      if (organization.status === OrganizationStatus.CANCELLED) {
+        throw new Error('Your organization has been cancelled. Please contact platform support.');
+      }
     }
 
     const token = generateToken({

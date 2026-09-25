@@ -3,6 +3,8 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 import {
   ChevronRight,
   LogOut,
@@ -11,6 +13,8 @@ import {
   LucideIcon,
   Layers,
   Loader2,
+  AlertOctagon,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -40,6 +44,15 @@ export function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const currentOrg = useQuery({
+    queryKey: ['dashboard-layout-current-org'],
+    queryFn: async () => (await api.get<{ _id: string; name: string; status: string }>('/organizations/current')).data,
+    enabled: Boolean(user && user.role !== 'PLATFORM_ADMIN'),
+    refetchInterval: 15000,
+  });
+
+  const isSuspended = currentOrg.data?.status === 'SUSPENDED';
 
   const isUnauthorized = !loading && (!user || Boolean(requiredRole && user.role !== requiredRole));
 
@@ -95,9 +108,19 @@ export function DashboardLayout({
             </div>
           </Link>
 
-          <div className="flex items-center gap-1.5 rounded-full border border-[#22385e] bg-[#162744] px-2.5 py-1 text-[11px] font-semibold text-slate-300">
-            <span className="size-1.5 rounded-full bg-indigo-400 animate-pulse" />
-            <span>{brandBadge}</span>
+          <div
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+              isSuspended
+                ? 'border-rose-800/50 bg-rose-950/50 text-rose-300'
+                : 'border-[#22385e] bg-[#162744] text-slate-300'
+            }`}
+          >
+            <span
+              className={`size-1.5 rounded-full ${
+                isSuspended ? 'bg-rose-400 animate-ping' : 'bg-indigo-400 animate-pulse'
+              }`}
+            />
+            <span>{isSuspended ? 'Suspended' : brandBadge}</span>
           </div>
         </div>
 
@@ -233,7 +256,54 @@ export function DashboardLayout({
 
       {/* Main Content Area - Image 1 Style (Crisp Light SaaS Workspace) */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 xl:p-10 relative bg-[#f8fafc] text-slate-900">
-        <div className="mx-auto max-w-7xl">{children}</div>
+        <div className="mx-auto max-w-7xl">
+          {isSuspended ? (
+            <div className="rounded-3xl border border-rose-200 bg-white p-8 sm:p-12 shadow-sm text-center max-w-2xl mx-auto my-8 space-y-6">
+              <div className="inline-flex size-16 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 shadow-sm">
+                <AlertOctagon size={32} />
+              </div>
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-800">
+                  Workspace Suspended
+                </div>
+                <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                  {currentOrg.data?.name || brandTitle} is Currently Suspended
+                </h2>
+                <p className="text-sm text-slate-600 leading-relaxed max-w-lg mx-auto">
+                  This workspace has been temporarily suspended by the platform administrator.
+                  All tenant features, member management, and workspace activities are restricted.
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-xs text-slate-600 text-left space-y-2">
+                <p className="font-semibold text-slate-800">Current Restrictions:</p>
+                <ul className="list-disc list-inside space-y-1 text-slate-500">
+                  <li>Member dashboards, subscriptions, and billing actions are locked.</li>
+                  <li>New member invitations and registrations are disabled.</li>
+                  <li>Once reactivated by the platform admin, your access will be restored immediately.</li>
+                </ul>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => currentOrg.refetch()}
+                  disabled={currentOrg.isFetching}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50 transition"
+                >
+                  <RefreshCw size={15} className={currentOrg.isFetching ? 'animate-spin' : ''} /> Check Status
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+                >
+                  <LogOut size={15} /> Sign Out
+                </button>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
+        </div>
       </main>
     </div>
   );

@@ -62,7 +62,9 @@ const authService = new services.AuthService(
   userRepository,
   passwordResetTokenRepository,
   pendingRegistrationRepository,
-  planRepository
+  planRepository,
+  undefined,
+  organizationRepository
 );
 const organizationService = new services.OrganizationService(
   organizationRepository,
@@ -85,7 +87,7 @@ const paymentService = new services.PaymentService(
   organizationRepository
 );
 const transactionService = new services.TransactionService(transactionRepository, paymentRepository);
-const memberService = new services.MemberService(userRepository, invitationRepository);
+const memberService = new services.MemberService(userRepository, invitationRepository, organizationRepository);
 const webhookService = new services.WebhookService(
   webhookEventRepository,
   organizationRepository,

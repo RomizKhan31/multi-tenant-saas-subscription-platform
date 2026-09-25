@@ -1,22 +1,42 @@
-import { UserRepository } from '../repositories';
-import { InvitationRepository } from '../repositories';
-import { IUser, UserRole } from '../types';
+import { UserRepository, InvitationRepository, OrganizationRepository } from '../repositories';
+import { IUser, UserRole, OrganizationStatus } from '../types';
 import { Types } from 'mongoose';
 import crypto from 'crypto';
 import { sendInvitationEmail } from '../utils/email';
 import { generateToken } from '../utils/jwt';
+import { Organization } from '../models/Organization';
 
 export class MemberService {
   constructor(
     private userRepository: UserRepository,
-    private invitationRepository: InvitationRepository
+    private invitationRepository: InvitationRepository,
+    private organizationRepository?: OrganizationRepository
   ) {}
+
+  private async getOrganization(organizationId: Types.ObjectId) {
+    if (this.organizationRepository) {
+      return this.organizationRepository.findById(organizationId);
+    }
+    return Organization.findById(organizationId).lean();
+  }
 
   async inviteMember(
     organizationId: Types.ObjectId,
     email: string,
     role: UserRole.ORGANIZATION_ADMIN | UserRole.ORGANIZATION_MEMBER
   ): Promise<void> {
+    // Verify organization is active
+    const organization = await this.getOrganization(organizationId);
+    if (!organization) {
+      throw new Error('Organization not found');
+    }
+    if (organization.status === OrganizationStatus.SUSPENDED) {
+      throw new Error('Organization is currently suspended. New invitations are disabled.');
+    }
+    if (organization.status === OrganizationStatus.CANCELLED) {
+      throw new Error('Organization is cancelled. New invitations are disabled.');
+    }
+
     // Check if user already exists
     const existingUser = await this.userRepository.findByEmail(email);
     if (existingUser && existingUser.organizationId?.toString() === organizationId.toString()) {
@@ -61,6 +81,18 @@ export class MemberService {
 
     if (invitation.expiresAt < new Date()) {
       throw new Error('Invitation has expired');
+    }
+
+    // Check organization status - suspended organizations cannot onboard members
+    const organization = await this.getOrganization(invitation.organizationId);
+    if (!organization) {
+      throw new Error('Organization not found');
+    }
+    if (organization.status === OrganizationStatus.SUSPENDED) {
+      throw new Error('This organization is currently suspended. New members cannot join a suspended organization.');
+    }
+    if (organization.status === OrganizationStatus.CANCELLED) {
+      throw new Error('This organization has been cancelled.');
     }
 
     // Check if user already exists
